@@ -113,7 +113,7 @@ nav.main a:hover{color:#fff;border-color:var(--green-hi)}
   background:var(--ink);color:#EAF1EC;position:relative;overflow:hidden;
   padding:clamp(48px,7vw,86px) 0 clamp(56px,7vw,90px);
 }
-.hero::before{ /* engineering grid, the instrument's world */
+.hero::before{
   content:"";position:absolute;inset:0;opacity:.5;pointer-events:none;
   background-image:linear-gradient(rgba(63,191,127,.09) 1px,transparent 1px),
                    linear-gradient(90deg,rgba(63,191,127,.09) 1px,transparent 1px);
@@ -136,43 +136,118 @@ h1 em{font-style:normal;color:var(--green-hi)}
 
 /* --- the device ------------------------------------------ */
 .device-stage{display:flex;flex-direction:column;align-items:center;gap:22px}
-.device{
-  width:min(340px,80vw);aspect-ratio:1/1.02;border-radius:14px;
-  background:var(--device);
-  box-shadow:0 30px 60px -20px rgba(0,0,0,.65),inset 0 2px 0 rgba(255,255,255,.28),
-             inset 0 -14px 26px rgba(0,0,0,.16);
-  padding:7% 7% 5%;display:flex;flex-direction:column;gap:5%;
-  transition:background .4s ease;position:relative;
+/* Device container: narrower width and reduced height */
+.device {
+  width: min(340px, 80vw); /* Reduced from 340px to make it narrower */
+  aspect-ratio: 1 / 0.85; /* Reduced height relative to width */
+  border-radius: 5px;
+  background: var(--device);
+  box-shadow: 0 30px 70px -20px rgba(0,0,0,.65),
+              inset 0 2px 0 rgba(255,255,255,.28),
+              inset 0 -14px 26px rgba(0,0,0,.16);
+  padding: 4% 0 9%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers the screen horizontally */
+  justify-content: space-between; /* Pushes the keyboard to the bottom */
+  transition: background .4s ease;
+  position: relative;
+  container-type: inline-size;
 }
-.device::after{ /* SD slot */
-  content:"";position:absolute;top:-5px;right:22%;width:34%;height:6px;border-radius:3px 3px 0 0;
-  background:var(--device);filter:brightness(.86)}
-.screen{
-  flex:1;border-radius:3px;background:#05130C;border:3px solid rgba(255,255,255,.85);
-  padding:13px 12px;overflow:hidden;position:relative;
-  font-family:var(--mono);font-size:10.5px;line-height:1.85;font-weight:400;
-  color:var(--green-hi);text-shadow:0 0 7px rgba(63,191,127,.45);
+
+/* SD card slot: adjusted left position to stay centered on the narrower body */
+.device::after { 
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 36%;
+  width: 28%;
+  height: 6px;
+  border-radius: 3px 3px 0 0;
+  background: #241E7A;
+  filter: brightness(1);
 }
-.screen::after{ /* scanlines */
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px)}
-.screen .row{display:block;white-space:pre;overflow:hidden;text-overflow:ellipsis;
-  opacity:0;animation:rowIn .26s ease forwards}
-.screen .row.dim{color:rgba(63,191,127,.5)}
-.screen .row.hi{color:#EFEEE7}
-@keyframes rowIn{to{opacity:1}}
-.keys{display:flex;align-items:center;justify-content:space-between;padding:0 4%}
-.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px 14px}
-.key{width:15px;height:15px;border-radius:50%;background:#0E1712;
-  box-shadow:inset 0 -2px 3px rgba(255,255,255,.18),0 1px 0 rgba(255,255,255,.25)}
-.leds{display:grid;gap:9px}
-.led{width:13px;height:13px;border-radius:50%;background:#0C5C33;
-  box-shadow:inset 0 0 4px rgba(0,0,0,.6),0 0 8px rgba(63,191,127,.55)}
-.led.blink{animation:blink 1.6s steps(1,end) infinite}
-@keyframes blink{0%,60%{opacity:1}61%,100%{opacity:.35}}
+
+/* Screen: landscape rectangle (wider aspect ratio), narrower overall width */
+.screen {
+  width: 80%; /* Leaves more plastic margin on the sides */
+  aspect-ratio: 1.5 / 1; /* Forces a landscape (horizontal) rectangle */
+  border-radius: 3px;
+  background: #05130C; 
+  border: 3px solid rgba(255,255,255,.85);
+  padding: 10px 8px;
+  overflow: hidden;
+  position: relative;
+  font-family: var(--mono);
+  font-size: 3.5cqi; 
+  line-height: 1.3;
+  font-weight: 400;
+  color: #FFFFFF; 
+  font-family: var(--mono);
+}
+
+/* Scanlines effect */
+.screen::after { 
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px);
+}
+
+.screen .row {
+  display: block;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  animation: rowIn .26s ease forwards;
+}
+
+.screen .row.dim { color: rgba(255,255,255,.5); }
+.screen .red { color: #FF4444; }
+.screen .yellow { color: #FFFF44; }
+.screen .cyan { color: #44FFFF; }
+.screen .green-text { color: #55FF55; }
+.screen .orange { color: #FF9900; }
+
+@keyframes rowIn { to { opacity: 1; } }
+
+/* Keyboard wrapper: takes full width to align buttons to the bottom right */
+.keys {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Aligns the grid and LEDs to the right */
+  gap: 22px; 
+  padding: 10% 9% 0 0; /* Matches the right margin of the screen */
+}
+.keypad{
+  display:grid;
+  grid-template-columns:repeat(3, 14px); /* 3 Columns */
+  gap:16px 22px; /* Vertical and horizontal spacing exactly like hardware */
+}
+.key{
+  width:14px;height:14px;border-radius:50%;background:#111;
+  box-shadow:inset 0 -1px 2px rgba(255,255,255,.18),0 2px 4px rgba(0,0,0,.4);
+}
+.leds{
+  display:flex;
+  flex-direction:column;
+  gap:10px; /* Space between the top and bottom LED */
+}
+.led{
+  width:12px;height:12px;border-radius:50%;background:#0C5C33;
+  box-shadow:inset 0 0 4px rgba(0,0,0,.6),0 0 8px rgba(63,191,127,.55);
+}
+.led.white-on{
+  background:#FFF;
+  box-shadow:inset 0 0 2px #FFF,0 0 12px #FFF,0 0 20px rgba(255,255,255,.9);
+  animation:none;
+}
 
 /* mode switcher */
-.modes{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:380px}
+.modes{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:420px}
 .mode{
   font-family:var(--mono);font-size:11px;font-weight:400;letter-spacing:.04em;
   padding:8px 13px;border-radius:2px;cursor:pointer;
@@ -378,18 +453,19 @@ footer a:hover{color:var(--green-hi)}
     </div>
 
     <div class="device-stage">
-      <div class="device" id="device" role="img" aria-label="Seedmate device with its screen showing the selected function">
+      <div class="device" id="device" role="img" aria-label="Seedmate device showing functions on screen">
         <div class="screen" id="screen"></div>
         <div class="keys">
           <div class="keypad">
             <i class="key"></i><i class="key"></i><i class="key"></i>
             <i class="key"></i><i class="key"></i><i class="key"></i>
           </div>
-          <div class="leds"><i class="led blink"></i><i class="led"></i></div>
+          <div class="leds"><i class="led"></i><i class="led white-on"></i></div>
         </div>
       </div>
       <div class="modes" role="tablist" aria-label="Seedmate functions">
-        <button class="mode" role="tab" aria-selected="true" data-mode="dice">Dice</button>
+        <button class="mode" role="tab" aria-selected="true" data-mode="menu">Menu</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="dice">Dice</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="coins">Coins</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="words">Words</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="xor">XOR</button>
@@ -570,21 +646,23 @@ footer a:hover{color:var(--green-hi)}
     <div class="device-stage rv">
       <div class="device" id="deviceBuy" aria-hidden="true">
         <div class="screen">
-          <span class="row hi">SEEDMATE</span>
-          <span class="row dim">─────────────</span>
-          <span class="row">1 GENERATE</span>
-          <span class="row">2 XOR</span>
-          <span class="row">3 SHAMIR</span>
-          <span class="row">4 OBFUSCATE</span>
-          <span class="row dim">─────────────</span>
-          <span class="row dim">v1.0  OFFLINE</span>
+          <span class="row">CREATE NEW SEED WORDS</span>
+          <span class="row orange">LOAD SEED WORDS</span>
+          <span class="row">SHAMIR SECRET SHARE</span>
+          <span class="row">SEED WORD XOR</span>
+          <span class="row">OBFUSCATION</span>
+          <span class="row">ERASE SD</span>
+          <span class="row">VIEW TUTORIAL</span>
+          <span class="row"> </span>
+          <span class="row dim">SD OK      [  ][/\ ][ OK]</span>
+          <span class="row dim">           [  ][\/ ][   ]</span>
         </div>
         <div class="keys">
           <div class="keypad">
             <i class="key"></i><i class="key"></i><i class="key"></i>
             <i class="key"></i><i class="key"></i><i class="key"></i>
           </div>
-          <div class="leds"><i class="led"></i><i class="led"></i></div>
+          <div class="leds"><i class="led"></i><i class="led white-on"></i></div>
         </div>
       </div>
     </div>
@@ -741,78 +819,103 @@ footer a:hover{color:var(--green-hi)}
   });
 
   /* ---------- device screen ----------
-     Illustrative content only. Nothing here generates or derives keys. */
+     Content dynamically extracted from provided Seedmate device photos. */
   var SCREENS = {
+    menu: [
+      ['CREATE NEW SEED WORDS', ''],
+      ['<span class="orange">LOAD SEED WORDS</span>', ''],
+      ['SHAMIR SECRET SHARE', ''],
+      ['SEED WORD XOR', ''],
+      ['OBFUSCATION', ''],
+      ['ERASE SD', ''],
+      ['VIEW TUTORIAL', ''],
+      [' ', ''],
+      ['              [   ][ ↑ ][ OK]', 'dim'],
+      ['<span class="green-text">SD OK</span>         [   ][ ↓ ][   ]', 'dim']
+    ],
     dice: [
-      ['ENTROPY / DICE', 'hi'],
-      ['─────────────', 'dim'],
-      ['roll 61 of 99', ''],
-      ['5 2 6 1 3 4 2', ''],
-      ['', ''],
-      ['bits   158/256', 'dim'],
-      ['████████░░░░', ''],
-      ['[OK] next roll', 'dim']
+      ['ROLL DICE up to 128 bits', ''],
+      ['        127/128 bits', 'dim'],
+      [' ', ''],
+      ['101010', ''],
+      ['11010101010 1706 STEM', ''],
+      ['00000000111 0007 ABSTRACT', ''],
+      ['10101010111 1367 PRIORITY', ''],
+      ['11100000101 1797 THING', ''],
+      ['11010101111 1711 STING', ''],
+      ['              1 | 2 | 3 ', 'dim'],
+      ['              4 | 5 | 6 ', 'dim']
     ],
     coins: [
-      ['ENTROPY / COIN', 'hi'],
-      ['─────────────', 'dim'],
-      ['1011 0010 1101', ''],
-      ['0110 1001 0011', ''],
-      ['', ''],
-      ['bits    96/256', 'dim'],
-      ['█████░░░░░░░', ''],
-      ['[OK] next flip', 'dim']
+      ['THROW COINS up to 128 bits', ''],
+      ['         056/128 bits', 'dim'],
+      [' ', ''],
+      ['1', ''],
+      ['01010110101 0693 FIND', ''],
+      ['01010110101 0693 FIND', ''],
+      ['1101111001  1785 TENNIS', ''],
+      ['11101101000 1896 UNFAIR', ''],
+      ['11001111100 1660 SORT', ''],
+      ['             DEL |    |    ', 'dim'],
+      ['             HEAD|TAIL|    ', 'dim']
     ],
     words: [
-      ['WORD ENTRY', 'hi'],
-      ['─────────────', 'dim'],
-      ['21 river', ''],
-      ['22 velvet', ''],
-      ['23 humble', ''],
-      ['24 ______', 'hi'],
-      ['checksum word', 'dim'],
-      ['[OK] compute', 'dim']
+      ['User word:', ''],
+      ['<span class="red">00000000000</span>', ''],
+      ['<span class="yellow">decimal: 0000</span>', ''],
+      ['<span class="red">word: ABANDON</span>', ''],
+      [' ', ''],
+      ['Checksum word:', ''],
+      ['<span class="red">00000000</span><span class="cyan">0011</span>', ''],
+      ['<span class="yellow">decimal: 0003</span>', ''],
+      ['<span class="green-text">word: ABOUT</span>', ''],
+      ['                 |   | OK ', 'dim'],
+      ['                 |   |    ', 'dim']
     ],
     xor: [
-      ['SEED XOR', 'hi'],
-      ['─────────────', 'dim'],
-      ['A  dice  24w', ''],
-      ['B  cards 24w', ''],
-      ['────── XOR ──', 'dim'],
-      ['C  mixed 24w', 'hi'],
-      ['', ''],
-      ['[OK] show C', 'dim']
+      ['A XOR B = C', ''],
+      ['A XOR B XOR C = D', ''],
+      ['A XOR B XOR C XOR D = E', ''],
+      [' ', ''],
+      [' ', ''],
+      [' ', ''],
+      [' ', ''],
+      [' ', ''],
+      ['            BACK | ^ | OK ', 'dim'],
+      ['                 | v |    ', 'dim']
     ],
     shamir: [
-      ['SHAMIR SPLIT', 'hi'],
+      ['SHAMIR SPLIT', ''],
       ['─────────────', 'dim'],
       ['shares   m = 3', ''],
       ['needed   k = 2', ''],
       ['', ''],
-      ['share 1/3 ready', 'hi'],
+      ['share 1/3 ready', ''],
       ['valid BIP39', 'dim'],
-      ['[OK] next share', 'dim']
+      ['                 |   | OK ', 'dim'],
+      ['                 |   |    ', 'dim']
     ],
     obfus: [
-      ['OBFUSCATE', 'hi'],
+      ['OBFUSCATE', ''],
       ['─────────────', 'dim'],
       ['method  ADD n', ''],
       ['n = 137', ''],
       ['', ''],
-      ['out: valid seed', 'hi'],
+      ['out: valid seed', ''],
       ['decoy / canary', 'dim'],
-      ['[OK] show out', 'dim']
+      ['                 |   | OK ', 'dim'],
+      ['                 |   |    ', 'dim']
     ]
   };
 
   var screen = document.getElementById('screen');
   function render(mode){
-    var lines = SCREENS[mode] || SCREENS.dice;
-    screen.innerHTML = '';
+    var lines = SCREENS[mode] || SCREENS.menu;
+    screen.innerHTML = ''; 
     lines.forEach(function(l, i){
       var el = document.createElement('span');
       el.className = 'row' + (l[1] ? ' ' + l[1] : '');
-      el.textContent = l[0] || ' ';
+      el.innerHTML = l[0] || ' ';
       el.style.animationDelay = reduce ? '0s' : (i * 0.045) + 's';
       screen.appendChild(el);
     });
@@ -830,7 +933,7 @@ footer a:hover{color:var(--green-hi)}
     render(tabs[i].dataset.mode);
     if(focus) tabs[i].focus();
   }
-  render('dice');
+  render('menu');
 
   /* auto-cycle until the visitor takes over */
   var taken = false, cycle;
@@ -841,7 +944,7 @@ footer a:hover{color:var(--green-hi)}
       if(taken) return;
       i = (i + 1) % tabs.length;
       select(i);
-    }, 3800);
+    }, 4200);
   }
 
   /* ---------- colour swatches ---------- */
