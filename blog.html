@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guides — Seedmate</title>
+<meta name="description" content="Self-custody guides from Seedmate: how to use seedXOR, what Seedmate is, and a seven-point self-custody checklist.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EFEEE7;--paper-hi:#FBFAF6;--ink:#0B1A13;--ink-soft:#41544A;
+  --green:#15613C;--green-hi:#3FBF7F;--orange:#D6521C;
+  --rule:rgba(11,26,19,.14);--rule-strong:rgba(11,26,19,.3);
+  --mono:"Martian Mono",ui-monospace,Menlo,monospace;
+  --serif:"Newsreader",Georgia,serif;
+  --pad:clamp(20px,5vw,64px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:19px;line-height:1.62}
+h1,h2,h3,h4{font-family:var(--mono);font-weight:600;letter-spacing:-.045em;line-height:1.08;margin:0}
+a{color:var(--green)}
+p{margin:0 0 1.1em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--pad)}
+.reading{max-width:66ch;margin:0 auto;padding:0 var(--pad)}
+
+/* header (shared with home) */
+header{position:sticky;top:0;z-index:60;background:rgba(11,26,19,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.1)}
+.bar{display:flex;align-items:center;gap:26px;height:66px;max-width:1180px;margin:0 auto;padding:0 var(--pad)}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff;margin-right:auto}
+.logo b{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:-.05em}
+.logo svg{width:15px;height:19px}
+nav.main{display:flex;gap:24px}
+nav.main a{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.72);text-decoration:none;
+  padding:4px 0;border-bottom:1px solid transparent}
+nav.main a:hover{color:#fff;border-color:var(--green-hi)}
+.buy-mini{font-family:var(--mono);font-size:12px;font-weight:600;text-decoration:none;color:#04150D;
+  background:var(--green-hi);padding:9px 16px;border-radius:2px;white-space:nowrap}
+.menu-btn{display:none;background:none;border:0;padding:8px;cursor:pointer}
+.menu-btn span{display:block;width:22px;height:1.5px;background:#fff;margin:5px 0}
+@media(max-width:860px){
+  nav.main{position:fixed;inset:66px 0 auto;background:var(--ink);flex-direction:column;gap:0;
+    padding:8px var(--pad) 26px;display:none}
+  nav.main.open{display:flex}
+  nav.main a{padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.09)}
+  .menu-btn{display:block;order:3}
+}
+a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+
+/* page head */
+.page-head{background:var(--ink);color:#EAF1EC;padding:clamp(50px,7vw,86px) 0 clamp(44px,6vw,70px);
+  position:relative;overflow:hidden}
+.page-head::before{content:"";position:absolute;inset:0;opacity:.45;
+  background-image:linear-gradient(rgba(63,191,127,.09) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(63,191,127,.09) 1px,transparent 1px);background-size:34px 34px;
+  mask-image:radial-gradient(120% 90% at 60% 10%,#000 20%,transparent 76%)}
+.page-head .wrap{position:relative}
+.tag{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--green-hi);display:inline-flex;align-items:center;gap:.6em;margin-bottom:18px}
+.tag::before{content:"";width:22px;height:1px;background:currentColor}
+.page-head h1{font-size:clamp(36px,6vw,64px);color:#fff;letter-spacing:-.055em;margin-bottom:18px}
+.page-head p{color:rgba(234,241,236,.72);max-width:46ch;font-size:20px;margin:0}
+
+/* index of articles */
+.toc{border-bottom:1px solid var(--rule);background:var(--paper-hi)}
+.toc-inner{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule)}
+@media(max-width:820px){.toc-inner{grid-template-columns:1fr}}
+.toc a{background:var(--paper-hi);padding:26px var(--pad);text-decoration:none;color:var(--ink);display:block}
+.toc a:hover{background:#fff}
+.toc time{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--ink-soft);display:block;margin-bottom:10px}
+.toc h3{font-size:19px}
+
+/* article */
+article{padding:clamp(52px,7vw,92px) 0;border-bottom:1px solid var(--rule)}
+article time{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--ink-soft);
+  display:block;margin-bottom:16px}
+article h2{font-size:clamp(30px,4.6vw,48px);margin-bottom:22px}
+article h3{font-size:clamp(20px,2.6vw,26px);margin:44px 0 16px;color:var(--green)}
+article h4{font-family:var(--mono);font-size:13px;letter-spacing:.06em;margin:32px 0 12px}
+article ul,article ol{padding-left:1.15em;margin:0 0 1.2em}
+article li{margin-bottom:.5em}
+.lead{font-size:22px;line-height:1.5;color:var(--ink);border-left:2px solid var(--green);
+  padding-left:22px;margin-bottom:34px}
+code{font-family:var(--mono);font-size:.8em;background:rgba(21,97,60,.1);color:var(--green);
+  padding:2px 6px;border-radius:2px}
+.calc{font-family:var(--mono);font-size:14px;line-height:2;background:var(--ink);color:#EAF1EC;
+  padding:22px 24px;border-radius:3px;margin:0 0 1.4em;overflow-x:auto;white-space:pre}
+.calc b{color:var(--green-hi);font-weight:600}
+.callout{border:1px solid var(--rule-strong);border-left:3px solid var(--orange);background:var(--paper-hi);
+  padding:22px 24px;margin:0 0 1.4em}
+.callout p:last-child{margin-bottom:0}
+.callout strong{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--orange);display:block;margin-bottom:8px}
+.check{list-style:none;padding:0;counter-reset:cp}
+.check > li{counter-increment:cp;border-top:1px solid var(--rule);padding:28px 0 8px}
+.check > li::before{content:"CHECKPOINT " counter(cp);font-family:var(--mono);font-size:11px;
+  letter-spacing:.18em;color:var(--orange);display:block;margin-bottom:10px}
+.check > li > h3{margin-top:0}
+
+/* cta */
+.cta{background:var(--ink);color:#EAF1EC;padding:clamp(50px,7vw,84px) 0;text-align:center}
+.cta h2{color:#fff;font-size:clamp(26px,4vw,40px);margin-bottom:14px}
+.cta p{color:rgba(234,241,236,.7);max-width:44ch;margin:0 auto 28px}
+.btn{font-family:var(--mono);font-size:13px;font-weight:600;display:inline-flex;padding:15px 26px;
+  border-radius:2px;background:var(--green-hi);color:#04150D;text-decoration:none;border:1px solid var(--green-hi)}
+.btn:hover{box-shadow:4px 4px 0 rgba(255,255,255,.3)}
+
+footer{background:var(--ink);color:rgba(234,241,236,.45);padding:34px 0;
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:rgba(234,241,236,.7);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="logo" href="index.html">
+      <svg viewBox="0 0 16 20" fill="none" aria-hidden="true">
+        <rect x="1" y="8" width="14" height="11" rx="2" fill="#3FBF7F"/>
+        <path d="M4 8V5a4 4 0 0 1 8 0v3" stroke="#3FBF7F" stroke-width="2"/>
+        <circle cx="8" cy="13.5" r="1.6" fill="#0B1A13"/>
+      </svg>
+      <b>SEEDMATE</b>
+    </a>
+    <nav class="main" id="nav">
+      <a href="index.html#what">What it is</a>
+      <a href="index.html#capabilities">Capabilities</a>
+      <a href="index.html#schemes">Recovery schemes</a>
+      <a href="index.html#specs">Specs</a>
+      <a href="blog.html">Guides</a>
+    </nav>
+    <a class="buy-mini" href="index.html#buy">Buy · €59</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="page-head">
+  <div class="wrap">
+    <span class="tag">Guides</span>
+    <h1>Keeping a secret safe</h1>
+    <p>Practical self-custody, written for people who intend to hold their own keys for decades.</p>
+  </div>
+</div>
+
+<div class="toc">
+  <div class="toc-inner">
+    <a href="#seedxor"><time datetime="2026-08-13">13 Aug 2026</time><h3>How to use seedXOR</h3></a>
+    <a href="#what-is-seedmate"><time datetime="2026-08-11">11 Aug 2026</time><h3>What is Seedmate?</h3></a>
+    <a href="#checklist"><time datetime="2026-08-09">9 Aug 2026</time><h3>Self-custody checklist</h3></a>
+  </div>
+</div>
+
+<!-- ==================== ARTICLE 1 ==================== -->
+<article id="seedxor">
+  <div class="reading">
+    <time datetime="2026-08-13">13 August 2026</time>
+    <h2>How to use seedXOR</h2>
+    <p class="lead">Good randomness is the foundation everything else sits on. If your seed can be guessed, nothing you do afterwards matters.</p>
+
+    <h3>Mixing randomness from different sources</h3>
+    <p>If a mnemonic is predictable, sooner or later the funds behind it are gone. Weak entropy has already cost people real money — which is why the safest habit is to generate your seed from real-world randomness rather than trusting a device to produce it for you.</p>
+    <p>Seedmate lets you build a mnemonic from dice rolls, coin tosses, poker cards, or words you typed yourself. Those words must come from the BIP39 list and must be picked at random: print the list, cut it into slips, shuffle, and pull 24 blindly.</p>
+    <p>Word typing is the most transparent method, because you did the picking — there is nothing to trust. The one catch is the final word, which carries the checksum and can't realistically be worked out by hand. Seedmate adjusts the last bits of that final word to satisfy the checksum. Every other word stays exactly as you drew it.</p>
+    <p>If you want to push entropy further, generate several mnemonics by different methods and combine them with seedXOR. The result carries the entropy of all of them and is safe to hold funds.</p>
+
+    <div class="callout">
+      <strong>Verify before you trust</strong>
+      <p>Run a few test cases through an independent tool or a second device and confirm you get the same result. Use throwaway seeds for this — never one holding funds.</p>
+    </div>
+
+    <h3>Creating recovery schemes</h3>
+    <p>XOR is reversible, and that's the whole trick:</p>
+    <div class="calc">if  A ⊕ B = <b>C</b>
+then <b>C</b> ⊕ B = A
+and  <b>C</b> ⊕ A = B</div>
+
+    <h4>A 2-of-2 scheme</h4>
+    <p>Say <code>A</code> is the mnemonic holding your funds. Generate a random mnemonic <code>B</code> with Seedmate and compute <code>C = A ⊕ B</code>. Now store <code>B</code> and <code>C</code> instead of <code>A</code>, and recover <code>A</code> by combining them again.</p>
+    <p>Lose either one and access is gone — same weakness as a passphrase, no redundancy. Keeping multiple copies of <code>B</code> and <code>C</code> in different places helps, but there's a better shape.</p>
+
+    <h4>A 2-of-3 scheme</h4>
+    <p>Start again from <code>A</code>, where the funds are. Generate two random mnemonics <code>B</code> and <code>C</code>, then compute:</p>
+    <div class="calc">D = A ⊕ B ⊕ C
+A = B ⊕ C ⊕ <b>D</b></div>
+    <p>Now distribute the pieces:</p>
+    <ul>
+      <li>Location 1 — <code>B</code> and <code>C</code></li>
+      <li>Location 2 — <code>B</code> and <code>D</code></li>
+      <li>Location 3 — <code>C</code> and <code>D</code></li>
+    </ul>
+    <p>Lose any single location and you can still rebuild <code>A</code> from the other two. Find a single location and you learn nothing. That is a 2-of-3 scheme, and it's the shape most people should be aiming for.</p>
+  </div>
+</article>
+
+<!-- ==================== ARTICLE 2 ==================== -->
+<article id="what-is-seedmate">
+  <div class="reading">
+    <time datetime="2026-08-11">11 August 2026</time>
+    <h2>What is Seedmate?</h2>
+    <p class="lead">Maybe start with what it is not. Seedmate is not another hardware wallet. It cannot connect to the internet — no PC, no phone, no software to install.</p>
+    <p>Seedmate is an air-gapped, standalone BIP39 calculator, built to cover the security gaps most hardware wallets leave behind. It doesn't replace your hardware wallet. It complements it.</p>
+    <p>Self-custody comes down to keeping a secret safe: safe from loss, and safe from prying eyes.</p>
+
+    <h3>First — you generate the secret yourself</h3>
+    <p>No third party creates it for you. With Seedmate you build mnemonics from real-world randomness: dice, coins, words and poker cards. Typing words is the most transparent and trustless method — pick 24, and the device adjusts only the last one to meet the checksum rules. Shuffle properly and draw blindly.</p>
+
+    <h3>Second — you can mix entropy sources</h3>
+    <p>Combine randomness from different physical sources for maximum entropy. Inputs and outputs are standard BIP39 mnemonics, typed on the on-screen keyboard or moved with an SD card. The SD card is there to make operations easier, not to store anything: wipe it afterwards and keep your backups analog.</p>
+
+    <h3>Third — you can build real recovery schemes</h3>
+    <p>Split your secret into three parts where a single part reveals nothing, and any two rebuild it completely. That's redundancy and secrecy at the same time — safe from loss, safe from prying eyes.</p>
+    <ul>
+      <li><b>XOR</b> — compatible with other devices, limited to 2-of-3.</li>
+      <li><b>Shamir</b> — custom, flexible schemes up to 6-of-9.</li>
+    </ul>
+    <div class="callout">
+      <strong>If the device is lost</strong>
+      <p>Because Shamir here is a custom implementation, relying only on the hardware would be a risk. Seedmate ships with a standalone offline HTML tool that reproduces every function — download it, run it on an air-gapped machine, and recover or verify your secrets whenever you need to.</p>
+    </div>
+
+    <h3>Fourth — obfuscation, built in</h3>
+    <p>Rather than storing a clear-text copy of your secret, apply a reversible transformation to it. Whoever finds that backup holds a valid mnemonic that isn't yours, unless they guess the exact reverse operation. Shifting every word by <code>n</code> positions is enough to produce a completely different, valid BIP39 seed.</p>
+    <p>Load that obfuscated seed with a small amount and it becomes a canary: if the coins ever move, you know your physical backup has been found. The same trick works with the recovery schemes above, since every part is a valid BIP39 seed.</p>
+
+    <h3>The hardware</h3>
+    <p>Seedmate is a personal project engineered in Spain. Two boards: a custom processor board around a PIC32, paired with a commercial display and SD module. The software is fully open source, written from scratch in C plus a few libraries for SHA256, QR generation and Shamir arithmetic.</p>
+    <p>It is stateless. Power it off and it clears completely — no seed can be stored inside the device.</p>
+  </div>
+</article>
+
+<!-- ==================== ARTICLE 3 ==================== -->
+<article id="checklist">
+  <div class="reading">
+    <time datetime="2026-08-09">9 August 2026</time>
+    <h2>Self-custody checklist</h2>
+    <p class="lead">This applies to amounts that would genuinely hurt to lose. As the number grows, so does the security you owe it.</p>
+
+    <ol class="check">
+      <li>
+        <h3>A mnemonic you can trust</h3>
+        <p>Generated properly, and genuinely random, without taking any software's word for it. Weak entropy has shipped in real products before and will again — don't take the risk.</p>
+        <p>A simple, trustless method: print the BIP39 word list, cut it into slips, and blindly pull 23. Use offline hardware only for the 24th, which carries the checksum and can't be worked out by hand. You picked 23 words; a third party contributed a checksum.</p>
+        <p>For the properly paranoid, mix several entropy sources with seedXOR on offline hardware — after testing the XOR logic. Twelve words are considered fine; we'd stay with 24.</p>
+        <p>If your funds sit on addresses that don't meet this bar, generate a new seed and move them carefully.</p>
+      </li>
+      <li>
+        <h3>The secret has never been online</h3>
+        <p>No phone photos, no SeedQR scans on a phone, no text files, never imported into a hot wallet, and no one else has had access to it. Never type it into a website. Never share it.</p>
+        <p>A seed that was used in a hot wallet does not become safe by being loaded into a cold one. The exposure already happened. Generate a new one and move the funds.</p>
+      </li>
+      <li>
+        <h3>Redundancy</h3>
+        <p>Lose the seed and you lose the funds, so keep redundant physical copies in separate locations, ideally on fire- and water-resistant material — or use a 2-of-3 scheme, below.</p>
+      </li>
+      <li>
+        <h3>Physical compromise</h3>
+        <p>Redundant copies protect against loss and expose you to discovery. Several ways to resolve that tension:</p>
+        <ul>
+          <li><b>Passphrase.</b> Combined with the mnemonic to derive different keys. An attacker needs both — but so do you. It's a 2-of-2: safer than single-sig, easier to lock yourself out.</li>
+          <li><b>SeedXOR 2-of-3.</b> Generate <code>A</code> and <code>B</code>, derive <code>C</code>, and split the pairs across three locations. One location on its own tells an attacker nothing. Several hardware wallets support SeedXOR.</li>
+          <li><b>Shamir k-of-n.</b> Any <code>k</code> shares rebuild the secret; fewer reveal nothing. Trezor's SLIP39 uses its own word list and few manufacturers adopted it. Seedmate implements Shamir over BIP39 instead: shares are BIP39 seeds of the same length, you write the share id and <code>k</code> alongside each one, and merging returns the original mnemonic. You'll need a Seedmate or the offline HTML tool to merge.</li>
+          <li><b>Obfuscation.</b> Transform <code>S</code> reversibly into another valid seed <code>X</code>. Whoever finds <code>X</code> gets nothing without the reverse operation, and decoy funds on <code>X</code> turn it into an early warning.</li>
+          <li><b>Invisible ink, or simply hiding the copies well.</b> Sometimes simpler is better.</li>
+          <li><b>Bitcoin multisig, multi-vendor.</b> Several keys from different manufacturers required to spend. Keep the descriptor file safe — losing it loses the funds. The final boss of self-custody.</li>
+        </ul>
+        <p>Every option buys security with complexity, and they combine. Find your own point on that trade-off.</p>
+      </li>
+      <li>
+        <h3>Test it</h3>
+        <p>Whatever scheme you choose, test it thoroughly before moving real money. Wipe every wallet and rebuild from scratch, try every k-of-n combination, generate receiving addresses, send small amounts, confirm you can spend them. Then move the rest.</p>
+        <p>Check your backups and rehearse the recovery at least twice a year.</p>
+      </li>
+      <li>
+        <h3>Write the treasury map</h3>
+        <p>Leave instructions so your family can recover the funds if something happens to you — and so you don't forget them yourself. Your will is one place only you can access while alive.</p>
+        <p>Never store seed words with the map. The map holds locations and instructions, nothing more.</p>
+      </li>
+      <li>
+        <h3>Privacy</h3>
+        <p>Prefer non-KYC routes and learn to use P2P networks. Use anonymous payment and delivery when buying hardware wallets and related products. Those customer databases eventually leak, and being on one marks you as a holder worth visiting.</p>
+      </li>
+    </ol>
+
+    <p style="margin-top:34px">Self-custody is a demanding puzzle, and that's one reason mass adoption won't be simple. Notice how little of this list a hardware wallet actually does for you. It's all about keeping a secret safe: not losing it, not exposing it.</p>
+  </div>
+</article>
+
+<div class="cta">
+  <div class="wrap">
+    <h2>The device behind the guides</h2>
+    <p>Air-gapped BIP39 calculator. Generate, mix, split and obfuscate — offline, in your hands.</p>
+    <a class="btn" href="index.html#buy">Buy Seedmate — €59</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
+    <span><a href="index.html">SEEDMATE.NET</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var mb = document.getElementById('menuBtn'), nav = document.getElementById('nav');
+  mb.addEventListener('click', function(){
+    var open = nav.classList.toggle('open');
+    mb.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+})();
+</script>
+</body>
+</html>

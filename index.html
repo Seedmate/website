@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seedmate — Air-gapped BIP39 calculator</title>
+<meta name="description" content="Seedmate is an air-gapped BIP39 calculator. Generate seeds with dice, coins, cards or words. Mix entropy with XOR. Split your secret with Shamir. Never online. €59, free shipping worldwide.">
+<meta property="og:title" content="Seedmate — Air-gapped BIP39 calculator">
+<meta property="og:description" content="Don't trust. Get in control. Generate, mix, split and obfuscate BIP39 seeds on a device that can never go online.">
+<meta property="og:type" content="product">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SEEDMATE — design tokens
+   paper / ink / brand green / signal orange
+   display+utility: Martian Mono   body prose: Newsreader
+   ============================================================ */
+:root{
+  --paper:#EFEEE7;
+  --paper-hi:#FBFAF6;
+  --ink:#0B1A13;
+  --ink-soft:#41544A;
+  --green:#15613C;
+  --green-hi:#3FBF7F;
+  --orange:#D6521C;
+  --rule:rgba(11,26,19,.14);
+  --rule-strong:rgba(11,26,19,.32);
+  --device:#22A05A;
+
+  --mono:"Martian Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+
+  --pad:clamp(20px,5vw,64px);
+  --maxw:1180px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--serif);font-size:19px;line-height:1.6;
+  font-optical-sizing:auto;
+}
+img{max-width:100%;display:block}
+a{color:inherit}
+h1,h2,h3,h4{font-family:var(--mono);font-weight:600;letter-spacing:-.04em;line-height:1.05;margin:0}
+p{margin:0 0 1em}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
+
+/* --- utility label: the "instrument" voice --------------- */
+.tag{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--green);
+  display:inline-flex;align-items:center;gap:.6em;margin:0 0 18px;
+}
+.tag::before{content:"";width:22px;height:1px;background:currentColor;flex:none}
+.tag.on-dark{color:var(--green-hi)}
+
+/* --- buttons --------------------------------------------- */
+.btn{
+  font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.02em;
+  display:inline-flex;align-items:center;justify-content:center;gap:.7em;
+  padding:15px 26px;border-radius:2px;border:1px solid var(--ink);
+  background:var(--ink);color:var(--paper-hi);text-decoration:none;cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:4px 4px 0 var(--green)}
+.btn--ghost{background:transparent;color:var(--ink)}
+.btn--ghost:hover{box-shadow:4px 4px 0 var(--ink)}
+.btn--onDark{background:var(--green-hi);border-color:var(--green-hi);color:#04150D}
+.btn--onDark:hover{box-shadow:4px 4px 0 rgba(255,255,255,.35)}
+.btn--wide{width:100%;padding:19px 26px;font-size:14px}
+a:focus-visible,button:focus-visible,select:focus-visible,summary:focus-visible{
+  outline:2px solid var(--orange);outline-offset:3px}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header{
+  position:sticky;top:0;z-index:60;background:rgba(11,26,19,.92);
+  backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.1);
+}
+.bar{display:flex;align-items:center;gap:26px;height:66px;max-width:var(--maxw);margin:0 auto;padding:0 var(--pad)}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff;margin-right:auto}
+.logo b{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:-.05em}
+.logo .lock{width:15px;height:19px;flex:none}
+nav.main{display:flex;gap:24px}
+nav.main a{
+  font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.02em;
+  color:rgba(255,255,255,.72);text-decoration:none;padding:4px 0;
+  border-bottom:1px solid transparent;transition:color .15s,border-color .15s}
+nav.main a:hover{color:#fff;border-color:var(--green-hi)}
+.buy-mini{
+  font-family:var(--mono);font-size:12px;font-weight:600;text-decoration:none;
+  color:#04150D;background:var(--green-hi);padding:9px 16px;border-radius:2px;white-space:nowrap}
+.menu-btn{display:none;background:none;border:0;padding:8px;cursor:pointer}
+.menu-btn span{display:block;width:22px;height:1.5px;background:#fff;margin:5px 0}
+@media(max-width:860px){
+  nav.main{position:fixed;inset:66px 0 auto;background:var(--ink);flex-direction:column;
+    gap:0;padding:8px var(--pad) 26px;display:none;border-bottom:1px solid rgba(255,255,255,.12)}
+  nav.main.open{display:flex}
+  nav.main a{padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.09)}
+  .menu-btn{display:block;order:3}
+}
+
+/* ============================================================
+   HERO — the device is the thesis
+   ============================================================ */
+.hero{
+  background:var(--ink);color:#EAF1EC;position:relative;overflow:hidden;
+  padding:clamp(48px,7vw,86px) 0 clamp(56px,7vw,90px);
+}
+.hero::before{ /* engineering grid, the instrument's world */
+  content:"";position:absolute;inset:0;opacity:.5;pointer-events:none;
+  background-image:linear-gradient(rgba(63,191,127,.09) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(63,191,127,.09) 1px,transparent 1px);
+  background-size:34px 34px;
+  mask-image:radial-gradient(120% 90% at 70% 20%,#000 20%,transparent 78%);
+}
+.hero-grid{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(30px,5vw,64px);align-items:center}
+@media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:44px}}
+h1{
+  font-size:clamp(38px,6.6vw,72px);line-height:.98;letter-spacing:-.055em;
+  margin:0 0 24px;color:#fff;
+}
+h1 em{font-style:normal;color:var(--green-hi)}
+.hero p.lede{
+  font-size:clamp(19px,2.2vw,23px);line-height:1.5;color:rgba(234,241,236,.76);
+  max-width:33ch;margin:0 0 30px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.price-inline{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(234,241,236,.55)}
+
+/* --- the device ------------------------------------------ */
+.device-stage{display:flex;flex-direction:column;align-items:center;gap:22px}
+.device{
+  width:min(340px,80vw);aspect-ratio:1/1.02;border-radius:14px;
+  background:var(--device);
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.65),inset 0 2px 0 rgba(255,255,255,.28),
+             inset 0 -14px 26px rgba(0,0,0,.16);
+  padding:7% 7% 5%;display:flex;flex-direction:column;gap:5%;
+  transition:background .4s ease;position:relative;
+}
+.device::after{ /* SD slot */
+  content:"";position:absolute;top:-5px;right:22%;width:34%;height:6px;border-radius:3px 3px 0 0;
+  background:var(--device);filter:brightness(.86)}
+.screen{
+  flex:1;border-radius:3px;background:#05130C;border:3px solid rgba(255,255,255,.85);
+  padding:13px 12px;overflow:hidden;position:relative;
+  font-family:var(--mono);font-size:10.5px;line-height:1.85;font-weight:400;
+  color:var(--green-hi);text-shadow:0 0 7px rgba(63,191,127,.45);
+}
+.screen::after{ /* scanlines */
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px)}
+.screen .row{display:block;white-space:pre;overflow:hidden;text-overflow:ellipsis;
+  opacity:0;animation:rowIn .26s ease forwards}
+.screen .row.dim{color:rgba(63,191,127,.5)}
+.screen .row.hi{color:#EFEEE7}
+@keyframes rowIn{to{opacity:1}}
+.keys{display:flex;align-items:center;justify-content:space-between;padding:0 4%}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px 14px}
+.key{width:15px;height:15px;border-radius:50%;background:#0E1712;
+  box-shadow:inset 0 -2px 3px rgba(255,255,255,.18),0 1px 0 rgba(255,255,255,.25)}
+.leds{display:grid;gap:9px}
+.led{width:13px;height:13px;border-radius:50%;background:#0C5C33;
+  box-shadow:inset 0 0 4px rgba(0,0,0,.6),0 0 8px rgba(63,191,127,.55)}
+.led.blink{animation:blink 1.6s steps(1,end) infinite}
+@keyframes blink{0%,60%{opacity:1}61%,100%{opacity:.35}}
+
+/* mode switcher */
+.modes{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:380px}
+.mode{
+  font-family:var(--mono);font-size:11px;font-weight:400;letter-spacing:.04em;
+  padding:8px 13px;border-radius:2px;cursor:pointer;
+  background:rgba(255,255,255,.06);color:rgba(234,241,236,.7);
+  border:1px solid rgba(255,255,255,.14);transition:.15s}
+.mode:hover{color:#fff;border-color:rgba(63,191,127,.6)}
+.mode[aria-selected="true"]{background:var(--green-hi);border-color:var(--green-hi);color:#04150D;font-weight:600}
+.demo-note{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(234,241,236,.4);text-align:center}
+
+/* ============================================================
+   IS / IS NOT
+   ============================================================ */
+.contrast{border-bottom:1px solid var(--rule);background:var(--paper-hi)}
+.contrast .wrap{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media(max-width:760px){.contrast .wrap{grid-template-columns:1fr}}
+.contrast .cell{padding:clamp(34px,4.5vw,58px) clamp(20px,3vw,44px)}
+.contrast .cell:first-child{border-right:1px solid var(--rule)}
+@media(max-width:760px){.contrast .cell:first-child{border-right:0;border-bottom:1px solid var(--rule)}}
+.contrast h3{font-size:clamp(21px,2.6vw,27px);margin-bottom:14px}
+.contrast .cell.no h3{color:var(--ink-soft)}
+.contrast .cell.no p{color:var(--ink-soft)}
+.contrast .cell.yes h3{color:var(--green)}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+section{padding:clamp(58px,8vw,104px) 0}
+.sec-head{max-width:60ch;margin-bottom:clamp(34px,4vw,56px)}
+.sec-head h2{font-size:clamp(28px,4.2vw,46px);margin-bottom:18px}
+.sec-head p{font-size:clamp(18px,2vw,21px);color:var(--ink-soft);margin:0}
+
+/* risk cards */
+.risks{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+@media(max-width:820px){.risks{grid-template-columns:1fr}}
+.risk{background:var(--paper-hi);padding:clamp(26px,3vw,38px)}
+.risk .n{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--orange);display:block;margin-bottom:16px}
+.risk h3{font-size:20px;margin-bottom:12px}
+.risk p{font-size:17px;color:var(--ink-soft);margin:0}
+
+/* capability rows */
+.caps{border-top:1px solid var(--rule)}
+.cap{
+  display:grid;grid-template-columns:auto 1fr 1.1fr;gap:clamp(18px,3vw,44px);
+  padding:clamp(28px,3.6vw,44px) 0;border-bottom:1px solid var(--rule);align-items:start}
+@media(max-width:820px){.cap{grid-template-columns:auto 1fr;gap:14px 20px}
+  .cap .cap-body{grid-column:1/-1}}
+.cap .mark{
+  font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;
+  color:var(--paper-hi);background:var(--ink);padding:7px 10px;border-radius:2px;white-space:nowrap}
+.cap h3{font-size:clamp(22px,2.8vw,30px)}
+.cap-body p{font-size:17.5px;color:var(--ink-soft);margin:0 0 .8em}
+.cap-body ul{margin:0;padding-left:1.1em;font-size:16.5px;color:var(--ink-soft)}
+.cap-body li{margin-bottom:.35em}
+.cap-body code{font-family:var(--mono);font-size:.82em;background:rgba(21,97,60,.1);
+  padding:2px 6px;border-radius:2px;color:var(--green)}
+
+/* ============================================================
+   SCHEME — 2 of 3 (signature diagram)
+   ============================================================ */
+.scheme{background:var(--ink);color:#EAF1EC}
+.scheme h2{color:#fff}
+.scheme .sec-head p{color:rgba(234,241,236,.7)}
+.vaults{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:26px}
+@media(max-width:760px){.vaults{grid-template-columns:1fr}}
+.vault{
+  border:1px solid rgba(255,255,255,.18);border-radius:3px;padding:24px 22px;
+  background:rgba(255,255,255,.035);transition:border-color .2s,background .2s}
+.vault:hover{border-color:var(--green-hi);background:rgba(63,191,127,.08)}
+.vault .where{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:rgba(234,241,236,.5);display:block;margin-bottom:14px}
+.shares{display:flex;gap:8px;margin-bottom:14px}
+.share{font-family:var(--mono);font-size:13px;font-weight:600;
+  border:1px solid var(--green-hi);color:var(--green-hi);border-radius:2px;padding:7px 13px}
+.vault p{font-size:15.5px;color:rgba(234,241,236,.62);margin:0;font-family:var(--serif)}
+.scheme-note{
+  font-family:var(--mono);font-size:12.5px;line-height:1.9;letter-spacing:-.01em;
+  border-left:2px solid var(--orange);padding:14px 0 14px 20px;color:rgba(234,241,236,.8);max-width:62ch}
+
+/* ============================================================
+   SPECS
+   ============================================================ */
+.specs{display:grid;grid-template-columns:repeat(2,1fr);gap:0 clamp(30px,5vw,70px)}
+@media(max-width:760px){.specs{grid-template-columns:1fr}}
+.spec{display:flex;justify-content:space-between;gap:18px;align-items:baseline;
+  padding:15px 0;border-bottom:1px solid var(--rule)}
+.spec dt{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--ink-soft);flex:none}
+.spec dd{margin:0;text-align:right;font-size:17px}
+
+/* ============================================================
+   BUY
+   ============================================================ */
+.buy{background:var(--paper-hi);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.buy-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px);align-items:center}
+@media(max-width:880px){.buy-grid{grid-template-columns:1fr;gap:40px}}
+.buy h2{font-size:clamp(30px,4vw,44px);margin-bottom:10px}
+.price{font-family:var(--mono);font-size:clamp(34px,5vw,52px);font-weight:700;letter-spacing:-.05em;margin:0 0 4px}
+.ship{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green);margin-bottom:26px}
+.field{margin-bottom:14px}
+.field label{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-soft);display:block;margin-bottom:9px}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{width:38px;height:38px;border-radius:50%;cursor:pointer;border:1px solid var(--rule-strong);
+  position:relative;transition:transform .15s}
+.swatch:hover{transform:scale(1.08)}
+.swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--paper-hi),0 0 0 4px var(--ink)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--rule-strong);border-radius:2px}
+.qty button{width:42px;height:42px;background:none;border:0;font-family:var(--mono);font-size:16px;cursor:pointer;color:var(--ink)}
+.qty span{width:44px;text-align:center;font-family:var(--mono);font-size:15px}
+.included{list-style:none;padding:0;margin:22px 0 0;font-size:16px;color:var(--ink-soft)}
+.included li{padding-left:24px;position:relative;margin-bottom:8px}
+.included li::before{content:"+";position:absolute;left:0;font-family:var(--mono);color:var(--green);font-weight:700}
+
+/* ============================================================
+   GUIDES
+   ============================================================ */
+.guides{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+@media(max-width:880px){.guides{grid-template-columns:1fr}}
+.guide{background:var(--paper-hi);padding:clamp(26px,3vw,36px);text-decoration:none;display:block;
+  transition:background .2s}
+.guide:hover{background:#fff}
+.guide time{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--ink-soft);display:block;margin-bottom:16px}
+.guide h3{font-size:22px;margin-bottom:12px}
+.guide p{font-size:16.5px;color:var(--ink-soft);margin:0 0 16px}
+.guide .more{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;color:var(--green);font-weight:600}
+.guide:hover .more{text-decoration:underline}
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+.faq{border-top:1px solid var(--rule)}
+details{border-bottom:1px solid var(--rule)}
+summary{
+  font-family:var(--mono);font-size:clamp(15px,1.9vw,18px);font-weight:600;letter-spacing:-.03em;
+  padding:24px 40px 24px 0;cursor:pointer;list-style:none;position:relative}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";position:absolute;right:6px;top:22px;font-weight:400;font-size:22px;color:var(--green);transition:transform .2s}
+details[open] summary::after{transform:rotate(45deg)}
+details .answer{padding:0 0 26px;max-width:72ch;color:var(--ink-soft);font-size:17.5px}
+details .answer p:last-child{margin-bottom:0}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer{background:var(--ink);color:rgba(234,241,236,.62);padding:clamp(48px,6vw,72px) 0 34px;font-size:16px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:44px}
+@media(max-width:760px){.foot-grid{grid-template-columns:1fr;gap:32px}}
+footer h4{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(234,241,236,.42);margin-bottom:16px;font-weight:400}
+footer a{color:rgba(234,241,236,.8);text-decoration:none;display:block;padding:5px 0}
+footer a:hover{color:var(--green-hi)}
+.foot-blurb{max-width:38ch;font-size:17px;color:rgba(234,241,236,.7)}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.12);padding-top:24px;
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:rgba(234,241,236,.4)}
+
+/* reveal on scroll */
+.rv{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="logo" href="#top">
+      <svg class="lock" viewBox="0 0 16 20" fill="none" aria-hidden="true">
+        <rect x="1" y="8" width="14" height="11" rx="2" fill="#3FBF7F"/>
+        <path d="M4 8V5a4 4 0 0 1 8 0v3" stroke="#3FBF7F" stroke-width="2"/>
+        <circle cx="8" cy="13.5" r="1.6" fill="#0B1A13"/>
+      </svg>
+      <b>SEEDMATE</b>
+    </a>
+    <nav class="main" id="nav">
+      <a href="#what">What it is</a>
+      <a href="#why">Why</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#schemes">Recovery schemes</a>
+      <a href="#specs">Specs</a>
+      <a href="blog.html">Guides</a>
+    </nav>
+    <a class="buy-mini" href="#buy">Buy · €59</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- =========================== HERO =========================== -->
+<div class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="tag on-dark">Air-gapped BIP39 calculator</span>
+      <h1>Don't trust.<br><em>Get in control.</em></h1>
+      <p class="lede">Your seed is the only thing standing between you and losing everything. Generate it yourself, offline, with randomness you can see with your own eyes.</p>
+      <div class="hero-cta">
+        <a class="btn btn--onDark" href="#buy">Buy Seedmate — €59</a>
+        <a class="btn btn--ghost" href="#what" style="color:#EAF1EC;border-color:rgba(255,255,255,.35)">How it works</a>
+      </div>
+      <p class="price-inline" style="margin-top:20px">Free shipping worldwide · Open-source firmware · Engineered in Spain</p>
+    </div>
+
+    <div class="device-stage">
+      <div class="device" id="device" role="img" aria-label="Seedmate device with its screen showing the selected function">
+        <div class="screen" id="screen"></div>
+        <div class="keys">
+          <div class="keypad">
+            <i class="key"></i><i class="key"></i><i class="key"></i>
+            <i class="key"></i><i class="key"></i><i class="key"></i>
+          </div>
+          <div class="leds"><i class="led blink"></i><i class="led"></i></div>
+        </div>
+      </div>
+      <div class="modes" role="tablist" aria-label="Seedmate functions">
+        <button class="mode" role="tab" aria-selected="true" data-mode="dice">Dice</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="coins">Coins</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="words">Words</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="xor">XOR</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="shamir">Shamir</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="obfus">Obfuscate</button>
+      </div>
+      <p class="demo-note">Illustration only — no real seed is ever generated in a browser</p>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== IS / IS NOT ======================== -->
+<div class="contrast" id="what">
+  <div class="wrap">
+    <div class="cell no">
+      <h3>What Seedmate is not</h3>
+      <p>It is not another hardware wallet. It has no radio, no USB data link, no companion app. It cannot reach a PC, a phone or the internet — by construction, not by setting.</p>
+      <p style="margin:0">It doesn't replace your hardware wallet. It fixes the part your hardware wallet leaves to chance.</p>
+    </div>
+    <div class="cell yes">
+      <h3>What Seedmate is</h3>
+      <p>A standalone BIP39 calculator you hold in your hand. It turns dice rolls, coin flips, playing cards or words you picked yourself into a valid mnemonic — and back again.</p>
+      <p style="margin:0">Stateless: nothing is stored. Power it off and the device is empty.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ WHY ========================== -->
+<section id="why">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="tag">The gap nobody covers</span>
+      <h2>Self-custody is not a device. It's keeping a secret safe.</h2>
+      <p>Safe from loss, and safe from prying eyes. Most of that work happens outside your hardware wallet — and that's exactly where people get hurt.</p>
+    </div>
+    <div class="risks rv">
+      <div class="risk">
+        <span class="n">RISK 01</span>
+        <h3>Entropy you didn't see</h3>
+        <p>If a device generates your seed, you're trusting that its randomness is real. Wallets have shipped weak entropy before, and the funds were guessable long before anyone noticed.</p>
+      </div>
+      <div class="risk">
+        <span class="n">RISK 02</span>
+        <h3>A secret that touched a screen</h3>
+        <p>A photo, a text file, a hot wallet import — once the words have been online, no amount of cold storage brings them back. The exposure already happened.</p>
+      </div>
+      <div class="risk">
+        <span class="n">RISK 03</span>
+        <h3>Backups that betray you</h3>
+        <p>Redundant copies protect you from loss and expose you to theft at the same time. One plain-text copy found by the wrong person is the whole secret.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CAPABILITIES ====================== -->
+<section id="capabilities" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="tag">Four operations</span>
+      <h2>Generate. Mix. Split. Obfuscate.</h2>
+      <p>Everything happens on the device, in your hands, with the screen facing you. Inputs and outputs are plain BIP39 mnemonics, so every wallet you own understands them.</p>
+    </div>
+
+    <div class="caps">
+      <article class="cap rv">
+        <span class="mark">GENERATE</span>
+        <h3>Randomness from the physical world</h3>
+        <div class="cap-body">
+          <p>Roll dice, flip coins, draw poker cards, or pick words yourself. Typing words is the most transparent method there is: you pull 24 slips of paper blindly, and Seedmate only adjusts the final word so the checksum is valid. The other 23 stay exactly as you picked them.</p>
+          <ul>
+            <li>Dice, coins, playing cards, word typing</li>
+            <li>Results are equivalent to the Ian Coleman BIP39 tool</li>
+            <li>12 or 24 words — 24 recommended</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="cap rv">
+        <span class="mark">MIX</span>
+        <h3>Combine entropy sources with XOR</h3>
+        <div class="cap-body">
+          <p>Don't want to rely on a single source of randomness? Generate several mnemonics by different methods and XOR them together. The result carries the combined entropy of all of them, and remains a standard BIP39 mnemonic.</p>
+          <p style="margin:0">XOR is reversible: <code>A ⊕ B = C</code>, so <code>C ⊕ B = A</code>. That property is also what makes the recovery schemes below possible.</p>
+        </div>
+      </article>
+
+      <article class="cap rv">
+        <span class="mark">SPLIT</span>
+        <h3>Shamir's Secret Sharing, over BIP39</h3>
+        <div class="cap-body">
+          <p>Split your secret into up to 9 shares and require any k of them to rebuild it. Every share is itself a valid BIP39 mnemonic, so a share found alone reveals nothing and can even hold decoy funds.</p>
+          <ul>
+            <li>Split into m parts, m ≤ 9 · merge with k parts, 2 ≤ k ≤ 6</li>
+            <li>XOR schemes stay compatible with other devices (2-of-3)</li>
+            <li>A free offline HTML tool mirrors every function, so losing the device never locks you out</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="cap rv">
+        <span class="mark">OBFUSCATE</span>
+        <h3>Backups that don't read as backups</h3>
+        <div class="cap-body">
+          <p>Apply a reversible transformation to your seed and store the result instead. Whoever finds it holds a perfectly valid mnemonic — just not yours. Fund it with a small amount and it becomes a canary: if those coins ever move, your physical backup has been found.</p>
+          <ul>
+            <li>Circular bit shift, left or right</li>
+            <li>NOT — negate the entropy bits</li>
+            <li>ADD / SUB — shift every word by n positions</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== SCHEMES ======================== -->
+<section class="scheme" id="schemes">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="tag on-dark">Worked example</span>
+      <h2>A 2-of-3 scheme, in three places</h2>
+      <p>Your seed <b>S</b> becomes three shares. Any two rebuild it. Any one, on its own, reveals nothing at all — so a single compromised location costs you nothing, and a single lost location costs you nothing either.</p>
+    </div>
+    <div class="vaults rv">
+      <div class="vault">
+        <span class="where">Location 1 · Home safe</span>
+        <div class="shares"><span class="share">A</span><span class="share">B</span></div>
+        <p>Two shares together rebuild S.</p>
+      </div>
+      <div class="vault">
+        <span class="where">Location 2 · Parents' house</span>
+        <div class="shares"><span class="share">B</span><span class="share">C</span></div>
+        <p>Any pair works. No pair is special.</p>
+      </div>
+      <div class="vault">
+        <span class="where">Location 3 · Bank box</span>
+        <div class="shares"><span class="share">A</span><span class="share">C</span></div>
+        <p>Lose a location, keep your coins.</p>
+      </div>
+    </div>
+    <div class="scheme-note rv">
+      Compare with a passphrase: seed + passphrase is a 2-of-2 scheme.<br>
+      Lose either half and the funds are gone. There is no redundancy in it.
+    </div>
+    <p class="rv" style="margin-top:34px">
+      <a class="btn btn--onDark" href="blog.html">Read the self-custody checklist</a>
+    </p>
+  </div>
+</section>
+
+<!-- =========================== SPECS ========================= -->
+<section id="specs">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="tag">Hardware &amp; firmware</span>
+      <h2>Built to be inspected</h2>
+      <p>Two boards: a custom processor board around a PIC32, plus a commercial display and SD module. Firmware written from scratch in C, fully open source.</p>
+    </div>
+    <dl class="specs rv">
+      <div class="spec"><dt>Connectivity</dt><dd>None. Air-gapped by design</dd></div>
+      <div class="spec"><dt>Storage</dt><dd>Stateless — clears on power off</dd></div>
+      <div class="spec"><dt>Processor</dt><dd>PIC32, custom board</dd></div>
+      <div class="spec"><dt>Input</dt><dd>On-screen keyboard · SD card</dd></div>
+      <div class="spec"><dt>Export</dt><dd>QR standard &amp; compact, SD card</dd></div>
+      <div class="spec"><dt>QR compatibility</dt><dd>Krux, SeedSigner and others</dd></div>
+      <div class="spec"><dt>Power</dt><dd>AAA batteries, 15+ hours</dd></div>
+      <div class="spec"><dt>Firmware</dt><dd>Open source, C from scratch</dd></div>
+      <div class="spec"><dt>Standard</dt><dd>BIP39 — works with every BIP39 wallet</dd></div>
+      <div class="spec"><dt>Colours</dt><dd>Orange, black, white, green, blue</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ============================ BUY ========================== -->
+<section class="buy" id="buy">
+  <div class="wrap buy-grid">
+    <div class="device-stage rv">
+      <div class="device" id="deviceBuy" aria-hidden="true">
+        <div class="screen">
+          <span class="row hi">SEEDMATE</span>
+          <span class="row dim">─────────────</span>
+          <span class="row">1 GENERATE</span>
+          <span class="row">2 XOR</span>
+          <span class="row">3 SHAMIR</span>
+          <span class="row">4 OBFUSCATE</span>
+          <span class="row dim">─────────────</span>
+          <span class="row dim">v1.0  OFFLINE</span>
+        </div>
+        <div class="keys">
+          <div class="keypad">
+            <i class="key"></i><i class="key"></i><i class="key"></i>
+            <i class="key"></i><i class="key"></i><i class="key"></i>
+          </div>
+          <div class="leds"><i class="led"></i><i class="led"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rv">
+      <span class="tag">In stock</span>
+      <h2>Seedmate</h2>
+      <p style="color:var(--ink-soft);max-width:44ch">Air-gapped BIP39 calculator. One device, four operations, no accounts and no software to install.</p>
+      <div class="price">€59.00</div>
+      <div class="ship">Free shipping worldwide</div>
+
+      <div class="field">
+        <label id="colourLabel">Colour — <span id="colourName">Green</span></label>
+        <div class="swatches" role="group" aria-labelledby="colourLabel">
+          <button class="swatch" data-colour="#D6521C" data-name="Orange" style="background:#D6521C" aria-pressed="false" aria-label="Orange"></button>
+          <button class="swatch" data-colour="#1C1C1C" data-name="Black" style="background:#1C1C1C" aria-pressed="false" aria-label="Black"></button>
+          <button class="swatch" data-colour="#F2F2EE" data-name="White" style="background:#F2F2EE" aria-pressed="false" aria-label="White"></button>
+          <button class="swatch" data-colour="#22A05A" data-name="Green" style="background:#22A05A" aria-pressed="true" aria-label="Green"></button>
+          <button class="swatch" data-colour="#2D5FC4" data-name="Blue" style="background:#2D5FC4" aria-pressed="false" aria-label="Blue"></button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="qtyVal">Quantity</label>
+        <div class="qty">
+          <button type="button" id="qtyMinus" aria-label="Decrease quantity">−</button>
+          <span id="qtyVal" aria-live="polite">1</span>
+          <button type="button" id="qtyPlus" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+
+      <!-- Wire this button to your checkout / cart endpoint -->
+      <a class="btn btn--wide" href="#" id="addToCart" data-sku="SEEDMATE">Add to cart — €59.00</a>
+
+      <ul class="included">
+        <li>SD card included</li>
+        <li>AAA batteries included</li>
+        <li>Offline HTML recovery tool, free download</li>
+        <li>Anonymous payment and delivery options</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== GUIDES ========================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="tag">Guides</span>
+      <h2>Learn the thing, then buy the tool</h2>
+      <p>Everything Seedmate does, explained in the open — including how to verify our results against tools we don't control.</p>
+    </div>
+    <div class="guides rv">
+      <a class="guide" href="blog.html#seedxor">
+        <time datetime="2026-08-13">13 Aug 2026</time>
+        <h3>How to use seedXOR</h3>
+        <p>Mixing randomness from different sources, and turning XOR into a recovery scheme with real redundancy.</p>
+        <span class="more">Read the guide →</span>
+      </a>
+      <a class="guide" href="blog.html#what-is-seedmate">
+        <time datetime="2026-08-11">11 Aug 2026</time>
+        <h3>What is Seedmate?</h3>
+        <p>Start with what it isn't. Then the four things it does that your hardware wallet leaves to you.</p>
+        <span class="more">Read the guide →</span>
+      </a>
+      <a class="guide" href="blog.html#checklist">
+        <time datetime="2026-08-09">9 Aug 2026</time>
+        <h3>Self-custody checklist</h3>
+        <p>Seven checkpoints, from generating a seed you can trust to writing the treasury map your family will need.</p>
+        <span class="more">Read the guide →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ FAQ ========================== -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="tag">Questions</span>
+      <h2>Before you order</h2>
+    </div>
+    <div class="rv">
+      <details>
+        <summary>Do I still need a hardware wallet?</summary>
+        <div class="answer"><p>Yes. Seedmate doesn't sign transactions and doesn't hold funds. It handles the part before and around your wallet: creating the secret, combining it, splitting it, and storing it in a form that survives both loss and discovery.</p></div>
+      </details>
+      <details>
+        <summary>Can Seedmate ever go online?</summary>
+        <div class="answer"><p>No. There is no radio and no data connection of any kind. The SD card exists to move mnemonics in and out during an operation — wipe it afterwards and keep your backups analog.</p></div>
+      </details>
+      <details>
+        <summary>What happens if I lose the device?</summary>
+        <div class="answer"><p>Nothing, as long as you keep your shares. XOR schemes work with any other device that implements SeedXOR. For Shamir, we publish a standalone offline HTML tool that reproduces every function — download it, run it on an air-gapped machine, and rebuild your secret there.</p></div>
+      </details>
+      <details>
+        <summary>Can I verify the results against something else?</summary>
+        <div class="answer"><p>Please do. All operations are equivalent to the Ian Coleman BIP39 tool, and we recommend testing the XOR logic with test seeds before you move real money. Never test with a seed that holds funds.</p></div>
+      </details>
+      <details>
+        <summary>Does Seedmate store my seed?</summary>
+        <div class="answer"><p>It can't. The device is stateless: cut the power and everything is gone. There is no internal memory holding secrets between sessions.</p></div>
+      </details>
+      <details>
+        <summary>12 or 24 words?</summary>
+        <div class="answer"><p>Twelve is considered fine. We'd still use 24 for anything you'd be sad to lose — the cost is a slightly longer backup, and the margin is significant.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="logo" href="#top" style="margin-bottom:18px"><b>SEEDMATE</b></a>
+        <p class="foot-blurb">An air-gapped BIP39 calculator. A personal project engineered in Spain, with open-source firmware and no company standing between you and your secret.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <a href="#buy">Buy — €59</a>
+        <a href="#specs">Specs</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div>
+        <h4>Open source</h4>
+        <a href="#">Firmware source</a>
+        <a href="#">Offline HTML tool</a>
+        <a href="blog.html">Guides</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
+      <span>NOT FINANCIAL ADVICE · TEST YOUR BACKUPS TWICE A YEAR</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- mobile menu ---------- */
+  var mb = document.getElementById('menuBtn'), nav = document.getElementById('nav');
+  mb.addEventListener('click', function(){
+    var open = nav.classList.toggle('open');
+    mb.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  nav.addEventListener('click', function(e){
+    if(e.target.tagName === 'A'){ nav.classList.remove('open'); mb.setAttribute('aria-expanded','false'); }
+  });
+
+  /* ---------- device screen ----------
+     Illustrative content only. Nothing here generates or derives keys. */
+  var SCREENS = {
+    dice: [
+      ['ENTROPY / DICE', 'hi'],
+      ['─────────────', 'dim'],
+      ['roll 61 of 99', ''],
+      ['5 2 6 1 3 4 2', ''],
+      ['', ''],
+      ['bits   158/256', 'dim'],
+      ['████████░░░░', ''],
+      ['[OK] next roll', 'dim']
+    ],
+    coins: [
+      ['ENTROPY / COIN', 'hi'],
+      ['─────────────', 'dim'],
+      ['1011 0010 1101', ''],
+      ['0110 1001 0011', ''],
+      ['', ''],
+      ['bits    96/256', 'dim'],
+      ['█████░░░░░░░', ''],
+      ['[OK] next flip', 'dim']
+    ],
+    words: [
+      ['WORD ENTRY', 'hi'],
+      ['─────────────', 'dim'],
+      ['21 river', ''],
+      ['22 velvet', ''],
+      ['23 humble', ''],
+      ['24 ______', 'hi'],
+      ['checksum word', 'dim'],
+      ['[OK] compute', 'dim']
+    ],
+    xor: [
+      ['SEED XOR', 'hi'],
+      ['─────────────', 'dim'],
+      ['A  dice  24w', ''],
+      ['B  cards 24w', ''],
+      ['────── XOR ──', 'dim'],
+      ['C  mixed 24w', 'hi'],
+      ['', ''],
+      ['[OK] show C', 'dim']
+    ],
+    shamir: [
+      ['SHAMIR SPLIT', 'hi'],
+      ['─────────────', 'dim'],
+      ['shares   m = 3', ''],
+      ['needed   k = 2', ''],
+      ['', ''],
+      ['share 1/3 ready', 'hi'],
+      ['valid BIP39', 'dim'],
+      ['[OK] next share', 'dim']
+    ],
+    obfus: [
+      ['OBFUSCATE', 'hi'],
+      ['─────────────', 'dim'],
+      ['method  ADD n', ''],
+      ['n = 137', ''],
+      ['', ''],
+      ['out: valid seed', 'hi'],
+      ['decoy / canary', 'dim'],
+      ['[OK] show out', 'dim']
+    ]
+  };
+
+  var screen = document.getElementById('screen');
+  function render(mode){
+    var lines = SCREENS[mode] || SCREENS.dice;
+    screen.innerHTML = '';
+    lines.forEach(function(l, i){
+      var el = document.createElement('span');
+      el.className = 'row' + (l[1] ? ' ' + l[1] : '');
+      el.textContent = l[0] || ' ';
+      el.style.animationDelay = reduce ? '0s' : (i * 0.045) + 's';
+      screen.appendChild(el);
+    });
+  }
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.mode'));
+  tabs.forEach(function(tab, idx){
+    tab.addEventListener('click', function(){ select(idx); });
+    tab.addEventListener('keydown', function(e){
+      if(e.key === 'ArrowRight'){ e.preventDefault(); select((idx+1) % tabs.length, true); }
+      if(e.key === 'ArrowLeft'){ e.preventDefault(); select((idx-1+tabs.length) % tabs.length, true); }
+    });
+  });
+  function select(i, focus){
+    tabs.forEach(function(t, j){ t.setAttribute('aria-selected', j === i ? 'true' : 'false'); });
+    render(tabs[i].dataset.mode);
+    if(focus) tabs[i].focus();
+  }
+  render('dice');
+
+  /* auto-cycle until the visitor takes over */
+  var taken = false, cycle;
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ taken = true; clearInterval(cycle); }); });
+  if(!reduce){
+    var i = 0;
+    cycle = setInterval(function(){
+      if(taken) return;
+      i = (i + 1) % tabs.length;
+      select(i);
+    }, 3800);
+  }
+
+  /* ---------- colour swatches ---------- */
+  var swatches = Array.prototype.slice.call(document.querySelectorAll('.swatch'));
+  var colourName = document.getElementById('colourName');
+  swatches.forEach(function(s){
+    s.addEventListener('click', function(){
+      swatches.forEach(function(o){ o.setAttribute('aria-pressed','false'); });
+      s.setAttribute('aria-pressed','true');
+      document.documentElement.style.setProperty('--device', s.dataset.colour);
+      colourName.textContent = s.dataset.name;
+    });
+  });
+
+  /* ---------- quantity ---------- */
+  var q = 1, qv = document.getElementById('qtyVal');
+  document.getElementById('qtyPlus').addEventListener('click', function(){ q = Math.min(q+1, 20); qv.textContent = q; });
+  document.getElementById('qtyMinus').addEventListener('click', function(){ q = Math.max(q-1, 1); qv.textContent = q; });
+
+  /* ---------- reveal ---------- */
+  if('IntersectionObserver' in window && !reduce){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, {rootMargin:'0px 0px -8% 0px', threshold:.08});
+    document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+  } else {
+    document.querySelectorAll('.rv').forEach(function(el){ el.classList.add('in'); });
+  }
+})();
+</script>
+</body>
+</html>
