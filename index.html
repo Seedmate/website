@@ -472,7 +472,7 @@ footer a:hover{color:var(--green-hi)}
     <div>
       <span class="tag on-dark">Air-gapped, open source BIP39 calculator</span>
       <h1>Don't trust.<br><em>Get in control.</em></h1>
-      <p class="lede">Your seed is the only thing standing between you and losing everything. Generate it yourself, offline, with randomness you can see with your own eyes.</p>
+      <p class="lede">Self-custody is all about keeping a secret safe. Don't trust a black box to handle it for you. Create the secret yourself, offline, using randomness you can see with your own eyes and verify at every step.</p>
       <div class="hero-cta">
         <a class="btn btn--onDark" href="#buy">Buy Seedmate — €59</a>
         <a class="btn btn--ghost" href="#what" style="color:#EAF1EC;border-color:rgba(255,255,255,.35)">How it works</a>
@@ -582,6 +582,7 @@ footer a:hover{color:var(--green-hi)}
         <div class="cap-body">
           <p>Don't want to rely on a single source of randomness? Generate several mnemonics by different methods and XOR them together. The result carries the combined entropy of all of them, and remains a standard BIP39 mnemonic.</p>
           <p style="margin:0">XOR is reversible: <code>A ⊕ B = C</code>, so <code>C ⊕ B = A</code>. That property is also what makes the recovery schemes below possible.</p>
+          <p style="margin:0">XOR is compatible with other devices.</p>
         </div>
       </article>
 
@@ -592,7 +593,6 @@ footer a:hover{color:var(--green-hi)}
           <p>Split your secret into up to 9 shares and require any k of them to rebuild it. Every share is itself a valid BIP39 mnemonic, so a share found alone reveals nothing and can even hold decoy funds.</p>
           <ul>
             <li>Split into m parts, m ≤ 9 · merge with k parts, 2 ≤ k ≤ 6</li>
-            <li>XOR schemes stay compatible with other devices (2-of-3)</li>
             <li>A free offline HTML tool mirrors every function, so losing the device never locks you out</li>
           </ul>
         </div>
@@ -619,7 +619,7 @@ footer a:hover{color:var(--green-hi)}
   <div class="wrap">
     <div class="sec-head rv">
       <span class="tag on-dark">Worked example</span>
-      <h2>A 2-of-3 scheme, in three places</h2>
+      <h2>An XOR 2-of-3 scheme, in three places</h2>
       <p>Your seed <b>S</b> becomes three shares. Any two rebuild it. Any one, on its own, reveals nothing at all — so a single compromised location costs you nothing, and a single lost location costs you nothing either.</p>
     </div>
     <div class="vaults rv">
@@ -667,7 +667,7 @@ footer a:hover{color:var(--green-hi)}
       <div class="spec"><dt>Power</dt><dd>AAA batteries, 15+ hours</dd></div>
       <div class="spec"><dt>Firmware</dt><dd>Open source, C from scratch</dd></div>
       <div class="spec"><dt>Standard</dt><dd>BIP39 — works with every BIP39 wallet</dd></div>
-      <div class="spec"><dt>Colours</dt><dd>Orange, black, white, green, blue</dd></div>
+      <div class="spec"><dt>Colours</dt><dd>Orange, black, white, green, blue, yellow</dd></div>
     </dl>
   </div>
 </section>
@@ -686,8 +686,8 @@ footer a:hover{color:var(--green-hi)}
           <span class="row">ERASE SD</span>
           <span class="row">VIEW TUTORIAL</span>
           <span class="row"> </span>
-          <span class="row dim">SD OK      [  ][/\ ][ OK]</span>
-          <span class="row dim">           [  ][\/ ][   ]</span>
+          <span class="row">           [    ][ ↑  ][ OK ]</span>
+          <span class="row"><span class="green-text"> SD OK</span>     [    ][ ↓  ][    ]</span>
         </div>
         <div class="keys">
           <div class="keypad">
@@ -714,6 +714,7 @@ footer a:hover{color:var(--green-hi)}
           <button class="swatch" data-colour="#F2F2EE" data-name="White" style="background:#F2F2EE" aria-pressed="false" aria-label="White"></button>
           <button class="swatch" data-colour="#22A05A" data-name="Green" style="background:#22A05A" aria-pressed="true" aria-label="Green"></button>
           <button class="swatch" data-colour="#2D5FC4" data-name="Blue" style="background:#2D5FC4" aria-pressed="false" aria-label="Blue"></button>
+          <button class="swatch" data-colour="#fee904" data-name="Yellow" style="background:#fee904" aria-pressed="false" aria-label="Yellow"></button>
         </div>
       </div>
 
@@ -731,9 +732,11 @@ footer a:hover{color:var(--green-hi)}
 
       <ul class="included">
         <li>SD card included</li>
+        <li>4 dice included</li>
         <li>AAA batteries included</li>
         <li>Offline HTML recovery tool, free download</li>
-        <li>Anonymous payment and delivery options</li>
+        <li>Recommended: anonymous payment and delivery options</li>
+        <li>BTC & crypto accepted</li>
       </ul>
     </div>
   </div>
@@ -792,15 +795,19 @@ footer a:hover{color:var(--green-hi)}
       </details>
       <details>
         <summary>Can I verify the results against something else?</summary>
-        <div class="answer"><p>Please do. All operations are equivalent to the Ian Coleman BIP39 tool, and we recommend testing the XOR logic with test seeds before you move real money. Never test with a seed that holds funds.</p></div>
+        <div class="answer"><p>Please do. Operations are equivalent to the Ian Coleman BIP39 tool, Bitcoin Seed tool, and other wallets. Seedmate provides all existing methods to convert from dice to mnemonic, even the outsiders. Never put a funded seed online, use those tools for test only.</p></div>
       </details>
       <details>
         <summary>Does Seedmate store my seed?</summary>
-        <div class="answer"><p>It can't. The device is stateless: cut the power and everything is gone. There is no internal memory holding secrets between sessions.</p></div>
+        <div class="answer"><p>It can't. The device is stateless: cut the power and everything is gone. SD card is intended for convenience and should be wiped afterwards. There is no internal memory holding secrets between sessions.</p></div>
       </details>
       <details>
         <summary>12 or 24 words?</summary>
-        <div class="answer"><p>Twelve is considered fine. We'd still use 24 for anything you'd be sad to lose — the cost is a slightly longer backup, and the margin is significant.</p></div>
+        <div class="answer"><p>Twelve is considered fine. But I would stick to 24 words for a little extra security.</p></div>
+      </details>
+      <details>
+        <summary>What is a Triple mnemonic?</summary>
+        <div class="answer"><p>It is a special 24 word mnemonic than can be splitted in two 12 words mnemonics that are also valid. It can be used to store you secret separately in two parts, and each part can hold decoy funds.</p></div>
       </details>
     </div>
   </div>
