@@ -630,16 +630,29 @@ footer a:hover{color:var(--green-hi)}
     <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
       <span></span><span></span>
     </button>
+    </div>
   </div>
+      <!-- Holiday Notice Banner (Place right after the opening body tag) -->
+    <div class="top-banner">
+      <div class="wrap">
+      <span class="tag on-dark" style="background-color: #D62828; color: #FFF; border-color: #D62828;"><strong>NOTICE:</strong> All orders placed after August 23rd will be processed starting August 31st.</span>
+    </div>
 </header>
 
 <!-- =========================== HERO =========================== -->
 <div class="hero" id="top">
   <div class="wrap hero-grid">
     <div>
+      
       <span class="tag on-dark">Air-gapped, open source BIP39 calculator</span>
       <h1>Don't trust.<br><em>Get in control.</em></h1>
       <p class="lede">Self-custody is all about keeping a secret safe. Don't trust a black box to handle it for you. Create the secret yourself, offline, using randomness you can see with your own eyes and verify at every step.</p>
+      <div class="hero-actions" style="margin-bottom: 35px;">
+        <a href="https://youtu.be/" target="_blank" class="video-link">
+          <span class="play-icon">▶</span> The weak entropy problem
+        </a>
+      </div>
+      
       <div class="hero-cta">
         <a class="btn btn--onDark" href="#buy">Buy Seedmate — €59</a>
         <a class="btn btn--ghost" href="#what" style="color:#EAF1EC;border-color:rgba(255,255,255,.35)">How it works</a>
@@ -673,7 +686,7 @@ footer a:hover{color:var(--green-hi)}
         <button class="mode" role="tab" aria-selected="false" data-mode="sd_write">SD</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="qr_view">QR</button>
       </div>
-      <p class="demo-note">Illustration only — no real seed is ever generated in a browser</p>
+      <p class="demo-note">Illustration only</p>
       <div class="hero-actions">
         <a href="https://youtu.be/J9tFtaR0LIU" target="_blank" class="video-link">
           <span class="play-icon">▶</span> Watch Seedmate overview
@@ -695,6 +708,7 @@ footer a:hover{color:var(--green-hi)}
     <div class="cell yes">
       <h3>What Seedmate is</h3>
       <p>A standalone BIP39 calculator you hold in your hand. It turns dice rolls, coin flips, playing cards or words picked by yourself into a valid mnemonic, displaying every detail for manual verification.</p>
+      <p>And much more: seedXOR, Shamir, Obfuscation, Triple mnemonics.</p>
       <p style="margin:0">Stateless: nothing is stored. Power it off and the device is empty.</p>
     </div>
   </div>
@@ -796,45 +810,8 @@ footer a:hover{color:var(--green-hi)}
     </div>
   </div>
 </section>
-
-
-<!-- ========================== SCHEMES ======================== -->
-<section class="scheme" id="schemes">
-  <div class="wrap">
-    <div class="sec-head rv">
-      <span class="tag on-dark">Worked example</span>
-      <h2>An XOR 2-of-3 scheme, in three places</h2>
-      <p>Your seed <b>S</b> becomes three shares. Any two rebuild it. Any one, on its own, reveals nothing at all — so a single compromised location costs you nothing, and a single lost location costs you nothing either.</p>
-    </div>
-    <div class="vaults rv">
-      <div class="vault">
-        <span class="where">Location 1 · Home safe</span>
-        <div class="shares"><span class="share">A</span><span class="share">B</span></div>
-        <p>Two shares together rebuild S.</p>
-      </div>
-      <div class="vault">
-        <span class="where">Location 2 · Parents' house</span>
-        <div class="shares"><span class="share">B</span><span class="share">C</span></div>
-        <p>Any pair works. No pair is special.</p>
-      </div>
-      <div class="vault">
-        <span class="where">Location 3 · Bank box</span>
-        <div class="shares"><span class="share">A</span><span class="share">C</span></div>
-        <p>Lose a location, keep your coins.</p>
-      </div>
-    </div>
-    <div class="scheme-note rv">
-      Compare with a passphrase: seed + passphrase is a 2-of-2 scheme.<br>
-      Lose either half and the funds are gone. There is no redundancy in it.
-    </div>
-    <p class="rv" style="margin-top:34px">
-      <a class="btn btn--onDark" href="blog.html">Read the self-custody checklist</a>
-    </p>
-  </div>
-</section>
-
 <!-- =========================== SPECS ========================= -->
-<section id="specs">
+<section id="specs" style="padding-top: 0px; margin-top: 0;">
   <div class="wrap">
     <div class="sec-head rv">
       <span class="tag">Hardware &amp; firmware</span>
@@ -940,12 +917,12 @@ footer a:hover{color:var(--green-hi)}
       <div class="spec"><dt>Connectivity</dt><dd>None. Air-gapped by design</dd></div>
       <div class="spec"><dt>Storage</dt><dd>Stateless — clears on power off</dd></div>
       <div class="spec"><dt>Processor</dt><dd>PIC32, custom board</dd></div>
-      <div class="spec"><dt>Input</dt><dd>On-screen keyboard · SD card</dd></div>
+      <div class="spec"><dt>SD compatibility</dt><dd> Intentionally obfuscated, no compatibility.</dd></div>
       <div class="spec"><dt>Export</dt><dd>QR standard &amp; compact, SD card</dd></div>
-      <div class="spec"><dt>QR compatibility</dt><dd>Krux, SeedSigner and others</dd></div>
+      <div class="spec"><dt>QR compatibility</dt><dd>QR: Krux, SeedSigner and others </dd></div>
       <div class="spec"><dt>Power</dt><dd>AAA batteries, 15+ hours</dd></div>
       <div class="spec"><dt>Firmware</dt><dd><a href="https://github.com/Seedmate/Seedmate" target="_blank" rel="noopener noreferrer">Open source</a>, C from scratch</dd></div>
-      <div class="spec"><dt>Standard</dt><dd>BIP39 — works with every BIP39 wallet</dd></div>
+      <div class="spec"><dt>Standard</dt><dd>BIP39 — works with every BIP39 wallet.</dd></div>
       <div class="spec"><dt>Colours</dt><dd>Orange, black, white, green, blue, yellow</dd></div>
     </dl>
   </div>
@@ -1021,6 +998,43 @@ footer a:hover{color:var(--green-hi)}
   </div>
 </section>
 
+<!-- ========================== SCHEMES ======================== -->
+<section class="scheme" id="schemes">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="tag on-dark">Worked example</span>
+      <h2>An XOR 2-of-3 scheme, in three places</h2>
+      <p>Your seed <b>S</b> becomes three shares. Any two rebuild it. Any one, on its own, reveals nothing at all — so a single compromised location costs you nothing, and a single lost location costs you nothing either.</p>
+    </div>
+    <div class="vaults rv">
+      <div class="vault">
+        <span class="where">Location 1 · Home safe</span>
+        <div class="shares"><span class="share">A</span><span class="share">B</span></div>
+        <p>Two shares together rebuild S.</p>
+      </div>
+      <div class="vault">
+        <span class="where">Location 2 · Parents' house</span>
+        <div class="shares"><span class="share">B</span><span class="share">C</span></div>
+        <p>Any pair works. No pair is special.</p>
+      </div>
+      <div class="vault">
+        <span class="where">Location 3 · Bank box</span>
+        <div class="shares"><span class="share">A</span><span class="share">C</span></div>
+        <p>Lose a location, keep your coins.</p>
+      </div>
+    </div>
+    <div class="scheme-note rv">
+      Compare with a passphrase: seed + passphrase is a 2-of-2 scheme.<br>
+      Lose either half and the funds are gone. There is no redundancy in it.
+    </div>
+    <p class="rv" style="margin-top:24px">
+      <a class="btn btn--onDark" href="blog.html">Read the self-custody checklist</a>
+    </p>
+  </div>
+</section>
+
+
+
 <!-- ========================== GUIDES ========================= -->
 <section>
   <div class="wrap">
@@ -1074,15 +1088,15 @@ footer a:hover{color:var(--green-hi)}
       </details>
       <details>
         <summary>Can Seedmate ever go online?</summary>
-        <div class="answer"><p>No. There is no radio and no data connection of any kind. The SD card exists to move mnemonics in and out during an operation — wipe it afterwards and keep your backups analog.</p></div>
+        <div class="answer"><p>No. There is no radio and no data connection of any kind. The SD card exists to move mnemonics in and out during an operation — wipe it afterwards and keep your backups analog. SeedQR codes are intended for compatible wallets, never scan a funded seed with your phone.</p></div>
       </details>
       <details>
         <summary>What happens if I lose the device?</summary>
-        <div class="answer"><p>Nothing, as long as you keep your shares. XOR schemes work with any other device that implements SeedXOR. For Shamir, we publish a standalone offline HTML tool that reproduces every function — download it, run it on an air-gapped machine, and rebuild your secret there.</p></div>
+        <div class="answer"><p>Nothing, as long as you keep your shares. XOR schemes work with any other device that implements SeedXOR. For Shamir, download this <a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">offline HTML tool</a> that reproduces every function — test it with dummy wallets. If you need to run it for real, setup an air-gapped machine (see <a href="https://tails.net/" target="_blank" rel="noopener noreferrer">Tails</a>), Shamir is for advanced users only.</p></div>
       </details>
       <details>
         <summary>Can I verify the results against something else?</summary>
-        <div class="answer"><p>Please do. Operations are equivalent to the <a href="https://iancoleman.io/bip39/" target="_blank" rel="noopener noreferrer">Ian Coleman BIP39 tool</a>, <a href="https://bitcoiner.guide/seed/#/seed" target="_blank" rel="noopener noreferrer">Bitcoin Seed tool</a>, and other wallets. Seedmate provides all existing methods to convert from dice to mnemonic, even the outsiders.<span class="warning-text"> Never put a funded seed online, neither a seed where you plan to put funds, use those tools for test only.</span></p></div>
+        <div class="answer"><p>Please do. Most operations are equivalent to the <a href="https://iancoleman.io/bip39/" target="_blank" rel="noopener noreferrer">Ian Coleman BIP39 tool</a>, <a href="https://bitcoiner.guide/seed/#/seed" target="_blank" rel="noopener noreferrer">Bitcoin Seed tool</a>, and other wallets. Seedmate provides all existing methods to convert from dice to mnemonic, even the outsiders.<span class="warning-text"> Never put a funded seed online, neither a seed where you plan to put funds, use those tools for test only.</span></p></div>
       </details>
       <details>
         <summary>Does Seedmate store my seed?</summary>
@@ -1119,7 +1133,11 @@ footer a:hover{color:var(--green-hi)}
         <a href="#"><a href="https://github.com/Seedmate/Seedmate" target="_blank" rel="noopener noreferrer">Open source Firmware</a></a>
         <a href="#"><a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">Offline HTML tool</a></a>
         <a href="blog.html">Guides</a>
-        <a href="#">Contact</a>
+        <a href="mailto:support@seedmate.net" target="_blank" rel="noopener noreferrer">✉ Contact</a>
+
+        <a href="https://x.com/@seedmate_btc" target="_blank" rel="noopener noreferrer" style="color: var(--paper-hi, #FFF); text-decoration: none; border: none;">
+          We are in 𝕏 
+        </a>
       </div>
     </div>
     <div class="foot-bottom">
