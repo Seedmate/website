@@ -454,7 +454,7 @@ section{padding:clamp(58px,8vw,104px) 0}
 .qty span{width:44px;text-align:center;font-family:var(--mono);font-size:15px}
 .included{list-style:none;padding:0;margin:22px 0 0;font-size:16px;color:var(--ink-soft)}
 .included li{padding-left:24px;position:relative;margin-bottom:8px}
-.included li::before{content:"+";position:absolute;left:0;font-family:var(--mono);color:var(--green);font-weight:700}
+.included li::before{content:"•";position:absolute;left:0;font-family:var(--mono);color:var(--green);font-weight:700}
 
 /* ============================================================
    GUIDES
@@ -488,7 +488,13 @@ details .answer p:last-child{margin-bottom:0}
    FOOTER
    ============================================================ */
 footer{background:var(--ink);color:rgba(234,241,236,.62);padding:clamp(48px,6vw,72px) 0 34px;font-size:16px}
-.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:44px}
+.foot-grid{  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Crea 3 columnas de igual tamaño */
+  gap: 2rem; /* Añade un espacio uniforme entre ellas */
+  width: 100%;
+  max-width: 1200px; /* Ajusta este valor al ancho máximo de tu página */
+  margin: 0 auto; /* Centra el contenedor en la pantalla */
+}
 @media(max-width:760px){.foot-grid{grid-template-columns:1fr;gap:32px}}
 footer h4{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
   color:rgba(234,241,236,.42);margin-bottom:16px;font-weight:400}
@@ -635,7 +641,7 @@ footer a:hover{color:var(--green-hi)}
       <!-- Holiday Notice Banner (Place right after the opening body tag) -->
     <div class="top-banner">
       <div class="wrap">
-      <span class="tag on-dark" style="background-color: #D62828; color: #FFF; border-color: #D62828;"><strong>NOTICE:</strong> All orders placed after August 23rd will be processed starting August 31st.</span>
+      <span class="tag on-dark" style="background-color: #D62828; color: #FFF; border-color: #D62828;"><strong>NOTICE:</strong> All orders placed after August 22rd will be processed starting August 31st.</span>
     </div>
 </header>
 
@@ -775,7 +781,7 @@ footer a:hover{color:var(--green-hi)}
 
       <article class="cap rv">
         <span class="mark">MIX</span>
-        <h3>Combine entropy sources with XOR</h3>
+        <h3><a href="blog.html#seedxor">Combine entropy sources with XOR</a></h3>
         <div class="cap-body">
           <p>Don't want to rely on a single source of randomness? Generate several mnemonics by different methods and XOR them together. The result carries the combined entropy of all of them, and remains a standard BIP39 mnemonic.</p>
           <p style="margin:0">XOR is reversible: <code>A ⊕ B = C</code>, so <code>C ⊕ B = A</code>. That property is also what makes the recovery schemes below possible.</p>
@@ -785,7 +791,7 @@ footer a:hover{color:var(--green-hi)}
 
       <article class="cap rv">
         <span class="mark">SPLIT</span>
-        <h3>Shamir's Secret Sharing, over BIP39</h3>
+        <h3><a href="blog.html#shamir-bip39">Shamir's Secret Sharing</a>, over BIP39</h3>
         <div class="cap-body">
           <p>Split your secret into up to 9 shares and use any k of them to rebuild it. Every share is itself a valid BIP39 mnemonic, so a share found alone reveals nothing and can even hold decoy funds.</p>
           <ul>
@@ -807,6 +813,13 @@ footer a:hover{color:var(--green-hi)}
           </ul>
         </div>
       </article>
+      <article class="cap rv">
+        <span class="mark">Make it Triple</span>
+        <h3><a href="blog.html#triple-mnemonic">Matryoshka mnemonic</a></h3>
+        <div class="cap-body">
+          <p>This structure allows you to take a valid 24-word master mnemonic and split it into two valid 12-word mnemonics, giving you a total of three working seeds. You can then keep the two halves physically separated and even place decoy funds on the 12-word shares to hand over under duress, or to serve as an early-warning "canary" if the funds move. To access the main wallet, simply enter both 12-word parts in the correct order (there are only two possible combinations).</p>
+        </div>
+      </article>      
     </div>
   </div>
 </section>
@@ -1051,7 +1064,19 @@ footer a:hover{color:var(--green-hi)}
     <!-- Video link for sections with a light background -->
 
 
-    <div class="guides rv">
+<div class="guides rv">
+      <a class="guide" href="blog.html#triple-mnemonic">
+        <time datetime="2026-08-20">20 Aug 2026</time>
+        <h3>Triple mnemonic</h3>
+        <p>Split a 24-word master seed into two valid 12-word mnemonics, creating a 2-of-2 scheme to separate your backups physically.</p>
+        <span class="more">Read the guide →</span>
+      </a>
+      <a class="guide" href="blog.html#shamir-bip39">
+        <time datetime="2026-08-15">15 Aug 2026</time>
+        <h3>Shamir over BIP39</h3>
+        <p>Cut your master backup into multiple mathematical shares instead of keeping it as a single vulnerable list of words.</p>
+        <span class="more">Read the guide →</span>
+      </a>
       <a class="guide" href="blog.html#seedxor">
         <time datetime="2026-08-13">13 Aug 2026</time>
         <h3>How to use seedXOR</h3>
@@ -1110,6 +1135,18 @@ footer a:hover{color:var(--green-hi)}
         <summary>What is a Triple mnemonic?</summary>
         <div class="answer"><p>It is a special 24 word mnemonic than can be splitted in two 12 words mnemonics that are also valid. It can be used to store you secret separately in two parts, and each part can hold decoy funds.</p></div>
       </details>
+      <details>
+        <summary>Can I use other SD cards?</summary>
+        <div class="answer"><p>Yes, any SD card of that size (or with adapter) will work. If you really want to store your seeds on SD for the medium term, use a high quality memory card (not the one that ships with Seedmate) and make sure you have other analog backups, don't rely only on it. And take into account that any card written on a Seedmate will overwrite its file system and other information will be lost.</p></div>
+      </details>      
+      <details>
+        <summary>Was AI used for FW development?</summary>
+        <div class="answer"><p>Yes, some parts of the code were AI assisted in writing, approximately 40%. All code was human reviewed and tested. </p></div>
+      </details>    
+      <details>
+        <summary>Do you keep a database of your clients?</summary>
+        <div class="answer"><p>No. We only collect the necessary information required for shipping and billing purposes at the time of purchase. We do not store this data long-term, and we do not maintain a permanent database of our customers to ensure maximum privacy and security. </p></div>
+      </details>              
     </div>
   </div>
 </section>
@@ -1117,10 +1154,7 @@ footer a:hover{color:var(--green-hi)}
 <footer>
   <div class="wrap">
     <div class="foot-grid">
-      <div>
-        <a class="logo" href="#top" style="margin-bottom:18px"><b>SEEDMATE</b></a>
-        <p class="foot-blurb">An air-gapped BIP39 calculator. A personal project engineered in Spain, with open-source firmware and no company standing between you and your secret.</p>
-      </div>
+
       <div>
         <h4>Product</h4>
         <a href="#buy">Buy — €59</a>
@@ -1133,12 +1167,25 @@ footer a:hover{color:var(--green-hi)}
         <a href="#"><a href="https://github.com/Seedmate/Seedmate" target="_blank" rel="noopener noreferrer">Open source Firmware</a></a>
         <a href="#"><a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">Offline HTML tool</a></a>
         <a href="blog.html">Guides</a>
-        <a href="mailto:support@seedmate.net" target="_blank" rel="noopener noreferrer">✉ Contact</a>
-
-        <a href="https://x.com/@seedmate_btc" target="_blank" rel="noopener noreferrer" style="color: var(--paper-hi, #FFF); text-decoration: none; border: none;">
-          We are in 𝕏 
-        </a>
+ 
       </div>
+      <div>
+        <h4>Contact</h4>       
+        <a href="mailto:support@seedmate.net" target="_blank" rel="noopener noreferrer">✉ E-mail</a>
+
+        <a href="https://x.com/@SeedMate_BTC" target="_blank" rel="noopener noreferrer" style="color: var(--paper-hi, #FFF); text-decoration: none; border: none; display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          Seedmate_BTC
+        </a>
+        <a href="https://www.youtube.com/@SeedMate" target="_blank" rel="noopener noreferrer" style="color: var(--paper-hi, #FFF); text-decoration: none; border: none; display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+          Youtube channel
+        </a> 
+      </div>      
     </div>
     <div class="foot-bottom">
       <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
