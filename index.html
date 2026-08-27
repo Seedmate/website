@@ -987,27 +987,20 @@ footer a:hover{color:var(--green-hi)}
         </div>
       </div>
 
-      <div class="field">
-        <label for="qtyVal">Quantity</label>
-        <div class="qty">
-          <button type="button" id="qtyMinus" aria-label="Decrease quantity">−</button>
-          <span id="qtyVal" aria-live="polite">1</span>
-          <button type="button" id="qtyPlus" aria-label="Increase quantity">+</button>
-        </div>
-      </div>
+
 
 <!-- Contenedor Flexbox para mantener los botones en la misma fila -->
 <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
   
-  <!-- Botón para España (Ejemplo de color: Azul) -->
-  <a class="btn btn--wide" style="flex: 1; min-width: 200px; background-color: #2563eb; color: #ffffff; border: none;" href="https://buy.stripe.com/9B628q6061nI7G7cZ348000" target="_blank" data-sku="SEEDMATE">
-    Spain shipping €49.00
-  </a>
-  
-  <!-- Botón Worldwide (Ejemplo de color: Naranja oscuro) -->
-  <a class="btn btn--wide" style="flex: 1; min-width: 200px; background-color: #6e6600; color: #ffffff; border: none;" href="https://buy.stripe.com/cNiaEW3RY0jE3pR2kp48001" target="_blank" data-sku="SEEDMATE">
-    Worldwide shipping €58.00
-  </a>
+<!-- Spain Button -->
+<a id="btn-spain" class="btn btn--wide" style="flex: 1; min-width: 200px; background-color: #2563eb; color: #ffffff; border: none;" href="#" target="_blank" data-sku="SEEDMATE">
+  Spain shipping €49.00
+</a>
+
+<!-- Worldwide Button -->
+<a id="btn-worldwide" class="btn btn--wide" style="flex: 1; min-width: 200px; background-color: #6e6600; color: #ffffff; border: none;" href="#" target="_blank" data-sku="SEEDMATE">
+  Worldwide shipping €58.00
+</a>
 
 </div>
 
@@ -1029,48 +1022,81 @@ footer a:hover{color:var(--green-hi)}
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Select ALL payment buttons that have the data-sku="SEEDMATE" attribute
-  // This will grab both your local and worldwide shipping buttons
-  const buyButtons = document.querySelectorAll('a[data-sku="SEEDMATE"]');
+  // 1. Define the specific Stripe payment URLs for each color and shipping zone.
+  // Make sure the keys (e.g., 'green', 'black') exactly match the data-name attribute of your swatches (in lowercase).
+  const paymentLinks = {
+    "orange": {
+      spain: "https://buy.stripe.com/00wcN4ewC9Ue1hJaQV48008",
+      worldwide: "https://buy.stripe.com/aFa9ASbkq3vQ5xZ1gl48003"
+    },
+
+    "black": {
+      spain: "https://buy.stripe.com/9B600i2NU4zUf8z2kp48009",
+      worldwide: "https://buy.stripe.com/dRm8wO9ci6I23pR1gl48004"
+    },
+
+    "white": {
+      spain: "https://buy.stripe.com/bJe5kC9cigiCe4v5wB48007",
+      worldwide: "https://buy.stripe.com/8x2fZg3RYgiCaSj2kp48002"
+    },
+    "green": { 
+      spain: "https://buy.stripe.com/9B628q6061nI7G7cZ348000",
+      worldwide: "https://buy.stripe.com/cNiaEW3RY0jE3pR2kp48001"
+    },
+    "blue": {
+      spain: "https://buy.stripe.com/28E9AS1JQ1nIaSj9MR4800b",
+      worldwide: "https://buy.stripe.com/dRm7sK0FM2rMgcD5wB48006"
+    },
+    "yellow": {
+      spain: "https://buy.stripe.com/9B63cu4W2giC5xZ9MR4800a",
+      worldwide: "https://buy.stripe.com/6oUaEW2NU9Ue9Of0ch48005"
+    }
+  };
+
+  // 2. Select the specific buttons by their ID
+  const btnSpain = document.getElementById("btn-spain");
+  const btnWorldwide = document.getElementById("btn-worldwide");
   
-  // 2. Select the color swatch buttons and the color label display
+  // 3. Select the color swatches and the color label display
   const swatches = document.querySelectorAll(".swatch");
   const colourNameDisplay = document.getElementById("colourName");
 
-  // Function to inject the selected color into ALL Stripe URLs safely
+  // 4. Function to update both buttons with the exact URLs for the chosen color
   function updateStripeLinks(colorName) {
-    const formattedColor = `color_${colorName.toLowerCase()}`;
+    // Convert to lowercase to safely match the keys in the paymentLinks object
+    const key = colorName.toLowerCase();
     
-    buyButtons.forEach(button => {
-      // Use the URL object to read the button's current link
-      const url = new URL(button.href);
-      // Safely add or update the client_reference_id parameter
-      url.searchParams.set('client_reference_id', formattedColor);
-      // Save the updated URL back to the button
-      button.href = url.toString();
-    });
+    // Check if the color exists in the mapping to avoid errors
+    if (paymentLinks[key]) {
+      btnSpain.href = paymentLinks[key].spain;
+      btnWorldwide.href = paymentLinks[key].worldwide;
+    } else {
+      console.warn("No payment links found for color: ", colorName);
+    }
   }
 
-  // 3. Initialize the buttons with the default selected color (Green in your HTML)
+  // 5. Initialize the buttons with the default selected color on page load
   const defaultSelected = document.querySelector('.swatch[aria-pressed="true"]');
   if (defaultSelected) {
     updateStripeLinks(defaultSelected.getAttribute("data-name"));
   }
 
-  // 4. Listen for click events on each color swatch
+  // 6. Listen for click events on each color swatch
   swatches.forEach(swatch => {
     swatch.addEventListener("click", (e) => {
       // Get the color name from the data-name attribute
-      const colorName = e.target.getAttribute("data-name");
+      const colorName = e.currentTarget.getAttribute("data-name");
 
       // Update the visual text label (e.g., "Colour — Black")
-      colourNameDisplay.textContent = colorName;
+      if (colourNameDisplay) {
+        colourNameDisplay.textContent = colorName;
+      }
 
       // Update the visual state of the buttons for accessibility (aria-pressed)
       swatches.forEach(s => s.setAttribute("aria-pressed", "false"));
-      e.target.setAttribute("aria-pressed", "true");
+      e.currentTarget.setAttribute("aria-pressed", "true");
 
-      // Update ALL payment button links with the new color
+      // Inject the exact URLs for the newly selected color
       updateStripeLinks(colorName);
     });
   });
@@ -1479,10 +1505,7 @@ function render(mode){
     });
   });
 
-  /* ---------- quantity ---------- */
-  var q = 1, qv = document.getElementById('qtyVal');
-  document.getElementById('qtyPlus').addEventListener('click', function(){ q = Math.min(q+1, 20); qv.textContent = q; });
-  document.getElementById('qtyMinus').addEventListener('click', function(){ q = Math.max(q-1, 1); qv.textContent = q; });
+
 
   /* ---------- reveal ---------- */
   if('IntersectionObserver' in window && !reduce){
