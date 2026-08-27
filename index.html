@@ -996,12 +996,25 @@ footer a:hover{color:var(--green-hi)}
         </div>
       </div>
 
-      <!-- Wire this button to your checkout / cart endpoint -->
-      <!--<a class="btn btn--wide" href="#" id="addToCart" data-sku="SEEDMATE">Add to cart — €49.00</a>-->
-      <a class="btn btn--onDark" href="mailto:support@seedmate.net?subject=Seedmate%20Order&body=Hi!%20I%20would%20like%20to%20order%20Seedmate.%0A%0AQuantity:%20%0A%0A%0AColor:%20%0AShipping%20Country:%20%0APreferred%20payment%20method%20(Bitcoin/Lightning):%20">
-        Buy Seedmate via Email
-      </a>
+<!-- Contenedor Flexbox para mantener los botones en la misma fila -->
+<div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
+  
+  <!-- Botón para España (Ejemplo de color: Azul) -->
+  <a class="btn btn--wide" style="flex: 1; min-width: 200px; background-color: #2563eb; color: #ffffff; border: none;" href="https://buy.stripe.com/9B628q6061nI7G7cZ348000" target="_blank" data-sku="SEEDMATE">
+    Spain shipping €49.00
+  </a>
+  
+  <!-- Botón Worldwide (Ejemplo de color: Naranja oscuro) -->
+  <a class="btn btn--wide" style="flex: 1; min-width: 200px; background-color: #6e6600; color: #ffffff; border: none;" href="https://buy.stripe.com/cNiaEW3RY0jE3pR2kp48001" target="_blank" data-sku="SEEDMATE">
+    Worldwide shipping €58.00
+  </a>
 
+</div>
+
+<!-- Botón BTC/Lightning (Se mantiene igual, en su propia fila abajo) -->
+<a class="btn btn--onDark" href="mailto:support@seedmate.net?subject=Seedmate%20Order&body=Hi!%20I%20would%20like%20to%20order%20Seedmate.%0A%0AQuantity:%20%0A%0A%0AColor:%20%0AShipping%20Country:%20%0APreferred%20payment%20method%20(Bitcoin/Lightning):%20">
+  Buy with BTC/⚡ (e-mail)
+</a>
       <ul class="included">
         <li>SD card included</li>
         <li>4 dice included</li>
