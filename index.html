@@ -1012,7 +1012,7 @@ footer a:hover{color:var(--green-hi)}
 </div>
 
 <!-- Botón BTC/Lightning (Se mantiene igual, en su propia fila abajo) -->
-<a class="btn btn--onDark" href="mailto:support@seedmate.net?subject=Seedmate%20Order&body=Hi!%20I%20would%20like%20to%20order%20Seedmate.%0A%0AQuantity:%20%0A%0A%0AColor:%20%0AShipping%20Country:%20%0APreferred%20payment%20method%20(Bitcoin/Lightning):%20">
+<a class="btn btn--onDark" href="mailto:sales@seedmate.net?subject=Seedmate%20Order&body=Hi!%20I%20would%20like%20to%20order%20Seedmate.%0A%0AQuantity:%20%0A%0A%0AColor:%20%0AShipping%20Country:%20%0APreferred%20payment%20method%20(Bitcoin/Lightning):%20">
   Buy with BTC/⚡ (e-mail)
 </a>
       <ul class="included">
@@ -1026,6 +1026,56 @@ footer a:hover{color:var(--green-hi)}
     </div>
   </div>
 </section>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Select ALL payment buttons that have the data-sku="SEEDMATE" attribute
+  // This will grab both your local and worldwide shipping buttons
+  const buyButtons = document.querySelectorAll('a[data-sku="SEEDMATE"]');
+  
+  // 2. Select the color swatch buttons and the color label display
+  const swatches = document.querySelectorAll(".swatch");
+  const colourNameDisplay = document.getElementById("colourName");
+
+  // Function to inject the selected color into ALL Stripe URLs safely
+  function updateStripeLinks(colorName) {
+    const formattedColor = `color_${colorName.toLowerCase()}`;
+    
+    buyButtons.forEach(button => {
+      // Use the URL object to read the button's current link
+      const url = new URL(button.href);
+      // Safely add or update the client_reference_id parameter
+      url.searchParams.set('client_reference_id', formattedColor);
+      // Save the updated URL back to the button
+      button.href = url.toString();
+    });
+  }
+
+  // 3. Initialize the buttons with the default selected color (Green in your HTML)
+  const defaultSelected = document.querySelector('.swatch[aria-pressed="true"]');
+  if (defaultSelected) {
+    updateStripeLinks(defaultSelected.getAttribute("data-name"));
+  }
+
+  // 4. Listen for click events on each color swatch
+  swatches.forEach(swatch => {
+    swatch.addEventListener("click", (e) => {
+      // Get the color name from the data-name attribute
+      const colorName = e.target.getAttribute("data-name");
+
+      // Update the visual text label (e.g., "Colour — Black")
+      colourNameDisplay.textContent = colorName;
+
+      // Update the visual state of the buttons for accessibility (aria-pressed)
+      swatches.forEach(s => s.setAttribute("aria-pressed", "false"));
+      e.target.setAttribute("aria-pressed", "true");
+
+      // Update ALL payment button links with the new color
+      updateStripeLinks(colorName);
+    });
+  });
+});
+</script>
 
 <!-- ========================== SCHEMES ======================== -->
 <section class="scheme" id="schemes">
