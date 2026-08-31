@@ -638,11 +638,6 @@ footer a:hover{color:var(--green-hi)}
     </button>
     </div>
   </div>
-      <!-- Holiday Notice Banner (Place right after the opening body tag) -->
-    <div class="top-banner">
-      <div class="wrap">
-      <span class="tag on-dark" style="background-color: #D62828; color: #FFF; border-color: #D62828;"><strong>NOTICE:</strong> All orders placed after August 22rd will be processed starting August 31st.</span>
-    </div>
 </header>
 
 <!-- =========================== HERO =========================== -->
@@ -685,6 +680,7 @@ footer a:hover{color:var(--green-hi)}
         <button class="mode" role="tab" aria-selected="false" data-mode="cards">Cards</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="keyboard">Keyboard</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="checksum">Checksum</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="bip85">BIP85</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="xor">XOR</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="shamir">Shamir</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="obfus">Obfuscate</button>
@@ -714,7 +710,7 @@ footer a:hover{color:var(--green-hi)}
     <div class="cell yes">
       <h3>What Seedmate is</h3>
       <p>A standalone BIP39 calculator you hold in your hand. It turns dice rolls, coin flips, playing cards or words picked by yourself into a valid mnemonic, displaying every detail for manual verification.</p>
-      <p>And much more: seedXOR, Shamir, Obfuscation, Triple mnemonics.</p>
+      <p>And much more: seedXOR, BIP85 child seeds, Shamir, Obfuscation, Triple mnemonics.</p>
       <p style="margin:0">Stateless: nothing is stored. Power it off and the device is empty.</p>
     </div>
   </div>
@@ -788,6 +784,15 @@ footer a:hover{color:var(--green-hi)}
           <p>XOR is compatible with other devices and can be tested here <a href="https://bitcoiner.guide/seed/#/xor" target="_blank" rel="noopener noreferrer">Bitcoin Seed tool XOR.</a> <span class="warning-text"> Use it for test only.</span></p>
         </div>
       </article>
+
+      <article class="cap rv">
+        <span class="mark">Derive</span>
+        <h3>BIP85 child seeds</h3>
+        <div class="cap-body">
+          <p>Don't want to manage multiple physical backups for different wallets? Use a single master mnemonic to deterministically generate entirely new, independent 12 or 24-word seed phrases. Each child seed acts as a standalone wallet. If one of these derived seeds is ever compromised, your master seed and all other child seeds remain mathematically isolated and perfectly secure. This means you only ever need to safely secure one master backup. Results are fully deterministic and compliant with the standard BIP85 specification. </p>
+          <p>Use cases: hot wallets, family wallets, test-nets, compartmentalization, etc </p>
+        </div>
+      </article>      
 
       <article class="cap rv">
         <span class="mark">SPLIT</span>
@@ -949,12 +954,12 @@ footer a:hover{color:var(--green-hi)}
         <div class="screen">
           <span class="row">CREATE NEW SEED WORDS</span>
           <span class="row orange">LOAD SEED WORDS</span>
+          <span class="row">BIP85 CHILD SEED</span>          
           <span class="row">SHAMIR SECRET SHARE</span>
           <span class="row">SEED WORD XOR</span>
           <span class="row">OBFUSCATION</span>
           <span class="row">ERASE SD</span>
-          <span class="row">VIEW TUTORIAL</span>
-          <span class="row"> </span>
+          <span class="row">RESOURCES</span>
           <span class="row">           [    ][ ↑  ][ OK ]</span>
           <span class="row"><span class="green-text"> SD OK</span>     [    ][ ↓  ][    ]</span>
         </div>
@@ -1308,12 +1313,12 @@ document.addEventListener("DOMContentLoaded", () => {
     menu: [
       ['CREATE NEW SEED WORDS', ''],
       ['<span class="orange">LOAD SEED WORDS</span>', ''],
+      ['BIP85 CHILD SEED', ''],
       ['SHAMIR SECRET SHARE', ''],
       ['SEED WORD XOR', ''],
       ['OBFUSCATION', ''],
       ['ERASE SD', ''],
-      ['VIEW TUTORIAL', ''],
-      [' ', ''],
+      ['RESOURCES', ''],
       ['           [    ][ ↑  ][ OK ]', ''],
       ['<span class="green-text">SD OK</span>      [    ][ ↓  ][    ]', '']
     ],
@@ -1365,6 +1370,18 @@ document.addEventListener("DOMContentLoaded", () => {
       ['          [    ][    ][ OK ] ', ''],
       ['          [    ][    ][    ] ', '']
     ],
+    bip85: [
+      ['CHILD SIZE:     BIP85 INDEX:', ''],
+      [' ', ''],
+      [' <span class="orange">12 WORDS</span>             3', ''],
+      [' ', ''],
+      [' ', ''],
+      [' ', ''],
+      [' ', ''],
+      [' ', ''],
+      ['          [DEL ][ ↑  ][ OK ]', ''],
+      ['          [ <- ][ ↓  ][ -> ]', '']
+    ],    
     keyboard: [
       ['        2. ', ''],
       [' ', ''],
