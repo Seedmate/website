@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firmware Update Guide — Seedmate</title>
+<meta name="description" content="Step-by-step firmware update guide for Seedmate using MPLAB X IPE and PICkit 3.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EFEEE7;--paper-hi:#FBFAF6;--ink:#0B1A13;--ink-soft:#41544A;
+  --green:#15613C;--green-hi:#3FBF7F;--orange:#D6521C;
+  --rule:rgba(11,26,19,.14);--rule-strong:rgba(11,26,19,.3);
+  --mono:"Martian Mono",ui-monospace,Menlo,monospace;
+  --serif:"Newsreader",Georgia,serif;
+  --pad:clamp(20px,5vw,64px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:19px;line-height:1.62}
+h1,h2,h3,h4{font-family:var(--mono);font-weight:600;letter-spacing:-.045em;line-height:1.08;margin:0}
+a{color:var(--green)}
+p{margin:0 0 1.1em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--pad)}
+.reading{max-width:110ch;margin:0 auto;padding:0 var(--pad)}
+
+/* header (shared with home) */
+header{position:sticky;top:0;z-index:60;background:rgba(11,26,19,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.1)}
+.bar{display:flex;align-items:center;gap:26px;height:66px;max-width:1180px;margin:0 auto;padding:0 var(--pad)}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff;margin-right:auto}
+.logo b{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:-.05em}
+.logo svg{width:15px;height:19px}
+nav.main{display:flex;gap:24px}
+nav.main a{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.72);text-decoration:none;
+  padding:4px 0;border-bottom:1px solid transparent}
+nav.main a:hover{color:#fff;border-color:var(--green-hi)}
+.buy-mini{font-family:var(--mono);font-size:12px;font-weight:600;text-decoration:none;color:#04150D;
+  background:var(--green-hi);padding:9px 16px;border-radius:2px;white-space:nowrap}
+.menu-btn{display:none;background:none;border:0;padding:8px;cursor:pointer}
+.menu-btn span{display:block;width:22px;height:1.5px;background:#fff;margin:5px 0}
+@media(max-width:860px){
+  nav.main{position:fixed;inset:66px 0 auto;background:var(--ink);flex-direction:column;gap:0;
+    padding:8px var(--pad) 26px;display:none}
+  nav.main.open{display:flex}
+  nav.main a{padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.09)}
+  .menu-btn{display:block;order:3}
+}
+a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+
+/* page head */
+.page-head{background:var(--ink);color:#EAF1EC;padding:clamp(50px,7vw,86px) 0 clamp(44px,6vw,70px);
+  position:relative;overflow:hidden}
+.page-head::before{content:"";position:absolute;inset:0;opacity:.45;
+  background-image:linear-gradient(rgba(63,191,127,.09) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(63,191,127,.09) 1px,transparent 1px);background-size:34px 34px;
+  mask-image:radial-gradient(120% 90% at 60% 10%,#000 20%,transparent 76%)}
+.page-head .wrap{position:relative}
+.tag{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--green-hi);display:inline-flex;align-items:center;gap:.6em;margin-bottom:18px}
+.tag::before{content:"";width:22px;height:1px;background:currentColor}
+.page-head h1{font-size:clamp(36px,6vw,64px);color:#fff;letter-spacing:-.055em;margin-bottom:18px}
+.page-head p{color:rgba(234,241,236,.72);max-width:46ch;font-size:20px;margin:0}
+
+/* article */
+article{padding:clamp(52px,7vw,92px) 0;border-bottom:1px solid var(--rule)}
+article time{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--ink-soft);
+  display:block;margin-bottom:16px}
+article h2{font-size:clamp(30px,4.6vw,48px);margin-bottom:22px}
+article h3{font-size:clamp(20px,2.6vw,26px);margin:44px 0 16px;color:var(--green)}
+article h4{font-family:var(--mono);font-size:13px;letter-spacing:.06em;margin:32px 0 12px}
+article ul,article ol{padding-left:1.15em;margin:0 0 1.2em}
+article li{margin-bottom:.5em}
+.lead{font-size:22px;line-height:1.5;color:var(--ink);border-left:2px solid var(--green);
+  padding-left:22px;margin-bottom:34px}
+code{font-family:var(--mono);font-size:.8em;background:rgba(21,97,60,.1);color:var(--green);
+  padding:2px 6px;border-radius:2px}
+.calc{font-family:var(--mono);font-size:13px;line-height:1.7;background:var(--ink);color:#EAF1EC;
+  padding:22px 24px;border-radius:3px;margin:0 0 1.4em;overflow-x:auto;white-space:pre}
+.calc b{color:var(--green-hi);font-weight:600}
+.callout{border:1px solid var(--rule-strong);border-left:3px solid var(--orange);background:var(--paper-hi);
+  padding:22px 24px;margin:0 0 1.4em}
+.callout p:last-child{margin-bottom:0}
+.callout strong{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--orange);display:block;margin-bottom:8px}
+.check{list-style:none;padding:0;counter-reset:cp}
+.check > li{counter-increment:cp;border-top:1px solid var(--rule);padding:28px 0 8px}
+.check > li::before{content:"STEP " counter(cp);font-family:var(--mono);font-size:11px;
+  letter-spacing:.18em;color:var(--orange);display:block;margin-bottom:10px}
+.check > li > h3{margin-top:0}
+.img-container{margin:24px 0;text-align:center}
+.img-container img{max-width:100%;height:auto;border-radius:3px;border:1px solid var(--rule-strong)}
+.img-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+@media(max-width:768px){.img-grid{grid-template-columns:1fr}}
+
+/* cta */
+.cta{background:var(--ink);color:#EAF1EC;padding:clamp(50px,7vw,84px) 0;text-align:center}
+.cta h2{color:#fff;font-size:clamp(26px,4vw,40px);margin-bottom:14px}
+.cta p{color:rgba(234,241,236,.7);max-width:44ch;margin:0 auto 28px}
+.btn{font-family:var(--mono);font-size:13px;font-weight:600;display:inline-flex;padding:15px 26px;
+  border-radius:2px;background:var(--green-hi);color:#04150D;text-decoration:none;border:1px solid var(--green-hi)}
+.btn:hover{box-shadow:4px 4px 0 rgba(255,255,255,.3)}
+
+footer{background:var(--ink);color:rgba(234,241,236,.45);padding:34px 0;
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:rgba(234,241,236,.7);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="logo" href="index.html">
+      <svg viewBox="0 0 16 20" fill="none" aria-hidden="true">
+        <rect x="1" y="8" width="14" height="11" rx="2" fill="#3FBF7F"/>
+        <path d="M4 8V5a4 4 0 0 1 8 0v3" stroke="#3FBF7F" stroke-width="2"/>
+        <circle cx="8" cy="13.5" r="1.6" fill="#0B1A13"/>
+      </svg>
+      <b>SEEDMATE</b>
+    </a>
+    <nav class="main" id="nav">
+      <a href="index.html#what">What it is</a>
+      <a href="index.html#capabilities">Capabilities</a>
+      <a href="index.html#schemes">Recovery schemes</a>
+      <a href="index.html#specs">Specs</a>
+      <a href="blog.html">Guides</a>
+    </nav>
+    <a class="buy-mini" href="index.html#buy">Buy · €49</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="page-head">
+  <div class="wrap">
+    <span class="tag">Firmware Update</span>
+    <h1>Step-by-step Seedmate FW update</h1>
+    <p>A comprehensive technical guide to updating your Seedmate firmware safely and reliably using an ICSP programmer.</p>
+  </div>
+</div>
+
+<article>
+  <div class="reading">
+    <time datetime="2026-09-14">14 September 2026</time>
+    <h2>Required tools</h2>
+    <p class="lead">Before starting the update procedure, make sure you have the correct programmer and software prepared on your workstation.</p>
+
+    <h3>ICSP Programmer</h3>
+    <p><b>PICKIT 3:</b> This is the programmer used to program Seedmate. It is affordable and widely available online (e.g., <a href="https://a.aliexpress.com/_Ey92VBy" target="_blank" rel="noopener noreferrer">AliExpress</a>).</p>
+    <div class="img-container">
+      <img src="img/pickit3.png" alt="PICKIT3 Programmer and cable">
+    </div>
+    <p>An alternative valid tool is the <b>MPLAB SNAP</b>, though this document assumes the use of PICKIT 3.</p>
+
+    <h3>Programming Software</h3>
+    <p><b>MPLAB X IPE:</b> This software is provided by Microchip, the microcontroller manufacturer.</p>
+    <div class="callout">
+      <strong>Important Version Note</strong>
+      <p>The latest version of MPLAB X IPE does not support PICKIT 3. You must download an older, compatible version such as <b>v4.20</b> from the <a href="https://www.microchip.com/en-us/tools-resources/archives/mplab-ecosystem" target="_blank" rel="noopener noreferrer">Microchip Archives</a>.</p>
+    </div>
+    <p>Navigate to v4.20, select your operating system, and download. During installation, make sure to install only the programming tool:</p>
+    <ul>
+      <li>Uncheck <em>MPLAB X IDE</em> (unless you intend to modify and compile firmware yourself, in that case install the latest IDE release available).</li>
+      <li>Check <em>MPLAB IPE (Integrated Programming Environment)</em>.</li>
+    </ul>
+    <div class="img-container">
+      <img src="img/mplab_install.png" alt="MPLAB X IPE Installation options">
+    </div>
+
+    <h2>Programming guide</h2>
+    <ol class="check">
+      <li>
+        <h3>Download firmware & open device</h3> 
+        <p>Download the desired <code>.hex</code> file from the official <a href="https://github.com/Seedmate/Seedmate/releases" target="_blank" rel="noopener noreferrer"> GitHub release page</a>. If you intend to compile code yourself, download the source zip as well.</p>
+        <p>To access the programming header, open the top case. Remove the 6 screws from the bottom using the Allen key provided in your package box, then lift off the top case. You can take this opportunity to replace the AAA batteries if you have used the device for more than 10 hours (estimated battery life is 15 hours).</p>
+      </li>
+      <li>
+        <h3>Prepare the programming cable</h3>
+        <p>The board features a 5-hole connector on the left side labeled <b>P1</b> (programming port), while standard programmer cables have 6 pins. First, remove or cut one pin from the pin row. Then insert it into the programmer connector, starting from pin 1 which is indicated by a small white triangle.</p>
+        <div class="img-container">
+          <img src="img/pins_prep.png" alt="Preparing the 5-pin connector">
+        </div>
+      </li>
+      <li>
+        <h3>Connect the programmer to the board</h3>
+        <p>With the device powered <b>OFF</b>, connect the programmer to the board connector <b>P1</b>. Ensure that pin 1 of the board (MCLR) matches pin 1 of the programmer (indicated by the white triangle).</p>
+        <div class="img-grid">
+          <img src="img/connection1.png" alt="Board connection overview">
+          <img src="img/connection2.png" alt="Detailed board connection">
+        </div>
+      </li>
+      <li>
+        <h3>Configure MPLAB X IPE v4.20</h3>
+        <p>Power <b>ON</b> the Seedmate device. Open the MPLAB X IPE v4.20 software and configure the environment:</p>
+        <ul>
+          <li><b>Family:</b> Select <code>32-bit MCUs (PIC32)</code></li>
+          <li><b>Device:</b> Select <code>PIC32MM0064GPL028</code></li>
+          <li><b>Tool:</b> Select your connected PICKIT 3 and click <b>Connect</b>.</li>
+        </ul>
+        <div class="img-grid">
+          <img src="img/select_family.png" alt="Select Family">
+          <img src="img/select_device.png" alt="Select Device">
+        </div>
+        <p>You should see confirmation in the output console at the bottom of the application:</p>
+        <div class="calc">Connecting to MPLAB PICkit 3...
+Currently loaded firmware on PICkit 3
+Firmware Suite Version.....01.51.07 *
+Firmware type..............PIC32MM
+Target voltage detected
+Target device PIC32MM0064GPL028 found.
+Device ID Revision = 70000000</div>
+      </li>
+      <li>
+        <h3>Select Hex file and Program</h3>
+        <p>Click <b>Browse</b> to select the downloaded <code>.hex</code> file, then click <b>Program</b>.</p>
+        <div class="img-container">
+          <img src="img/ipe_main.png" alt="MPLAB X IPE main interface">
+        </div>
+        <p>When successful, the console output will display:</p>
+        <div class="calc">2026-09-14 17:13:30 +0200 - Programming...
+Device Erased...
+Programming...
+The following memory area(s) will be programmed:
+program memory: start address = 0x1d000000, end address = 0x1d00f7ff
+boot config memory
+configuration memory
+Programming/Verify complete
+2026-09-14 17:13:48 +0200 - Programming complete</div>
+      </li>
+    </ol>
+
+    <div class="callout">
+      <strong>CRITICAL WARNING</strong>
+      <p>Do not power off the device while programming!</p>
+    </div>
+
+    <h3>Troubleshooting & Tips</h3>
+    <ul>
+      <li>If the tool takes a while to connect the first time, close the app, disconnect the programmer, and retry.</li>
+      <li>If programming fails, the connection between the programmer and board may be loose. Retry while holding the cable/programmer gently to the left.</li>
+      <li>It is very hard to brick the processor (it has never happened during testing), but avoid touching the screen pins directly with your hands to prevent electrostatic discharge (ESD) damage.</li>
+    </ul>
+  </div>
+</article>
+
+<div class="cta">
+  <div class="wrap">
+    <h2>Secure Your Hardware</h2>
+    <p>Air-gapped BIP39 calculator. Generate, mix, split and obfuscate — offline, in your hands.</p>
+    <a class="btn" href="index.html#buy">Buy Seedmate — €49</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
+    <span><a href="index.html">SEEDMATE.NET</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var mb = document.getElementById('menuBtn'), nav = document.getElementById('nav');
+  mb.addEventListener('click', function(){
+    var open = nav.classList.toggle('open');
+    mb.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+})();
+</script>
+</body>
+</html>
