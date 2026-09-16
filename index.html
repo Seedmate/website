@@ -684,6 +684,7 @@ footer a:hover{color:var(--green-hi)}
         <button class="mode" role="tab" aria-selected="false" data-mode="xor">XOR</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="shamir">Shamir</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="obfus">Obfuscate</button>
+        <button class="mode" role="tab" aria-selected="false" data-mode="encode_poker">Encode Poker</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="word_list">WordList</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="sd_write">SD</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="qr_view">QR</button>
@@ -824,7 +825,14 @@ footer a:hover{color:var(--green-hi)}
         <div class="cap-body">
           <p>This structure allows you to take a valid 24-word master mnemonic and split it into two valid 12-word mnemonics, giving you a total of three working seeds. You can then keep the two halves physically separated and even place decoy funds on the 12-word shares to hand over under duress, or to serve as an early-warning "canary" if the funds move. To access the main wallet, simply enter both 12-word parts in the correct order (there are only two possible combinations).</p>
         </div>
-      </article>      
+      </article>     
+      <article class="cap rv">
+        <span class="mark">Encode</span>
+        <h3>Encode into poker cards</h3>
+        <div class="cap-body">
+          <p>You can convert any existing mnemonic into a sequence of poker cards, allowing you to store or transport a physical backup under the radar. Please note that more than one deck may be necessary.</p>
+        </div>
+      </article>          
     </div>
   </div>
 </section>
@@ -957,12 +965,13 @@ footer a:hover{color:var(--green-hi)}
           <span class="row">BIP85 CHILD SEED</span>          
           <span class="row">SHAMIR SECRET SHARE</span>
           <span class="row">SEED WORD XOR</span>
-          <span class="row">OBFUSCATION</span>
+          <span class="row">OBFUSCATION</span>          
           <span class="row">ERASE SD</span>
           <span class="row">RESOURCES</span>
           <span class="row">           [    ][ ↑  ][ OK ]</span>
           <span class="row"><span class="green-text"> SD OK</span>     [    ][ ↓  ][    ]</span>
         </div>
+        
         <div class="keys">
           <div class="keypad">
             <i class="key"></i><i class="key"></i><i class="key"></i>
@@ -1268,11 +1277,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <a href="#faq">FAQ</a>
       </div>
       <div>
-        <h4>Open source</h4>
-        <a href="#"><a href="https://github.com/Seedmate/Seedmate" target="_blank" rel="noopener noreferrer">Open source Firmware</a></a>
-        <a href="#"><a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">Offline HTML tool</a></a>
-        <a href="blog.html">Guides</a>
-        <a href="Printable BIP39 wordlist.pdf">Printable BIP39 wordlist</a>
+        <h4>Resources</h4>
+        <a href="https://github.com/Seedmate/Seedmate" target="_blank" rel="noopener noreferrer">Github repository</a></a>
+        <a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">Offline HTML tool</a></a>        
+        <a href="Printable BIP39 wordlist.pdf"target="_blank" rel="noopener noreferrer">Printable BIP39 wordlist</a>
+        <a href="Binary_BIP39_wordlist.pdf" target="_blank" rel="noopener noreferrer"> BIP39 wordlist binary and decimal</a>
         <a href="FW_update.html" target="_blank" rel="noopener noreferrer">FW update procedure</a>
       </div>
       
@@ -1440,6 +1449,18 @@ document.addEventListener("DOMContentLoaded", () => {
       ['', ''],
       ['           [BACK][ ↑  ][ OK ]', ''],
       ['           [    ][ ↓  ][    ]', '']
+    ],
+    encode_poker: [
+      ['<span class="orange">MNEMONIC TO CARDS', ''],
+      ['<span class="green-text">DECKS NEEDED:2', ''],
+      ['3D 6H Kd 9D 3C 7D 4C 4D', ''],
+      ['KC AS 4S QS JD 2C 2H 3S', ''],
+      ['6S 5S 9D QC 2S 6C 7S 4S', ''],
+      ['Ks 7C QD 5D KS', ''],
+      ['', ''],
+      ['', ''],
+      ['           ', ''],
+      [' <-      ', '']
     ],
     word_list: [
       ['1  THEN     13 QUICK', ''],
