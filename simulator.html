@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeedMate - Hardware Emulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <style>
+        :root {
+            --device: #22A05A; 
+            --screen-bg: #05130C;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 100px;
+            user-select: none;
+        }
+
+        .device-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* SD Card (Default inserted) */
+        .sd-card {
+            position: absolute;
+            top: -15px; /* Inserted state */
+            right: 25%;
+            width: 140px;
+            height: 60px;
+            background: #2D5FC4;
+            border-radius: 3px 3px 0 0;
+            border: 1px solid #111;
+            z-index: 1; /* Behind casing */
+            cursor: ns-resize;
+            transition: top 0.1s;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .sd-card::after {
+            content: "SD";
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 6px;
+            font-family: monospace;
+        }
+
+        /* Main device casing */
+        .device {
+            width: 430px;
+            height: 420px; /* Enlarged upwards to give more space below screen */
+            border-radius: 8px;
+            background: var(--device);
+            box-shadow: 0 30px 70px -20px rgba(0,0,0,.65),
+                        inset 0 2px 0 rgba(255,255,255,.28),
+                        inset 0 -14px 26px rgba(0,0,0,.16);
+            padding: 20px 0 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 5; 
+            transition: background 0.3s ease;
+        }
+
+
+        
+
+        /* Screen bezel */
+        .screen-bezel {
+            width: 80%;
+            aspect-ratio: 1.25 / 1;
+            border-radius: 3px;
+            background: var(--screen-bg);
+            border: 3px solid rgba(255,255,255,.85);
+            padding: 0px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        canvas {
+            background-color: var(--screen-bg);
+            /* Quitar width: 100% y height: 100%; */
+            width: 320px; 
+            height: 256px;
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        /* Hardware controls area */
+        .bottom-area {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 10%;
+            margin-top: auto;
+            margin-bottom: 25px;
+            margin-left: 100px;
+            box-sizing: border-box;
+            gap: 40px;
+        }
+
+        /* Power switch */
+        .power-switch-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+        }
+
+        .power-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background: #111;
+            border-radius: 10px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.2);
+            cursor: pointer;
+        }
+
+        .power-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: #444;
+            border-radius: 50%;
+            transition: left 0.2s;
+            box-shadow: 0 2px 2px rgba(0,0,0,0.5);
+        }
+
+        .power-switch.on::after {
+            left: 22px;
+            background: #2d5a27;
+        }
+
+        .power-label {
+            position: absolute;
+            top: -15px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 9px;
+            color: #fff;
+            font-family: monospace;
+            opacity: 0.6;
+        }
+
+        /* Keypad */
+        .keypad-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 18px);
+            gap: 34px 32px;
+        }
+
+        .key {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #111;
+            box-shadow: inset 0 -1px 2px rgba(255,255,255,.18), 0 2px 4px rgba(0,0,0,.4);
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            outline: none;
+        }
+        /* Hardware keys active state (Mouse click OR Keyboard press) */
+        .key:active, .key.pressed {
+            transform: translateY(2px);
+            box-shadow: inset 0 -2px 4px rgba(0,0,0,.6);
+        }
+
+        /* LEDs */
+        .leds {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-left: 28px;
+            margin-bottom: 10px;
+        }
+        .led {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #0C5C33;
+            box-shadow: inset 0 0 4px rgba(0,0,0,.6), 0 0 8px rgba(63,191,127,.55);
+            transition: background 0.05s, box-shadow 0.05s;
+        }
+        .led.white-on {
+            background: #FFF;
+            box-shadow: inset 0 0 2px #FFF, 0 0 12px #3FBF7F, 0 0 20px rgba(255,255,255,.9);
+        }
+
+        /* Color picker */
+        .color-picker {
+            display: flex;
+            gap: 15px;
+            margin-top: 40px;
+        }
+        .swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #444;
+            transition: transform 0.1s;
+        }
+        .swatch:hover { transform: scale(1.1); }
+        .swatch.active { border-color: #fff; }
+
+        .hints { margin-top: 15px; font-size: 11px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="device-wrapper">
+        <div class="sd-card" id="sd-card" title="Drag up/down"></div>
+        
+        <div class="device" id="device">
+            <div class="screen-bezel">
+                <canvas id="tft" width="320" height="256"></canvas>
+            </div>
+            
+            <div class="bottom-area">
+                <div class="power-switch-container">
+                    <div class="power-switch on" id="powerBtn">
+                        <div class="power-label">OFF/ON</div>
+                    </div>
+                </div>
+
+                <div class="keypad-container">
+                    <div class="keypad">
+                        <!-- Use pointer events to detect when the mouse is held down and released -->
+                        <button class="key" id="btn-back" onpointerdown="startInput('BACK')" onpointerup="stopInput()" onpointerleave="stopInput()" title="BACK / DEL"></button>
+                        <button class="key" id="btn-up" onpointerdown="startInput('UP')" onpointerup="stopInput()" onpointerleave="stopInput()" title="UP"></button>
+                        <button class="key" id="btn-ok" onpointerdown="startInput('OK')" onpointerup="stopInput()" onpointerleave="stopInput()" title="OK / STD QR"></button>
+                        
+                        <button class="key" id="btn-left" onpointerdown="startInput('LEFT')" onpointerup="stopInput()" onpointerleave="stopInput()" title="LEFT (HEAD/0)"></button>
+                        <button class="key" id="btn-down" onpointerdown="startInput('DOWN')" onpointerup="stopInput()" onpointerleave="stopInput()" title="DOWN (TAIL/1)"></button>
+                        <button class="key" id="btn-right" onpointerdown="startInput('RIGHT')" onpointerup="stopInput()" onpointerleave="stopInput()" title="RIGHT (COMPACT QR)"></button>
+                    </div>
+                    <div class="leds">
+                        <i class="led" id="led-top"></i>
+                        <i class="led white-on" id="led-bottom"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="color-picker">
+        <div class="swatch" style="background:#D6521C" onclick="changeColor('#D6521C', this)"></div>
+        <div class="swatch" style="background:#1C1C1C" onclick="changeColor('#1C1C1C', this)"></div>
+        <div class="swatch" style="background:#F2F2EE" onclick="changeColor('#F2F2EE', this)"></div>
+        <div class="swatch active" style="background:#22A05A" onclick="changeColor('#22A05A', this)"></div>
+        <div class="swatch" style="background:#2D5FC4" onclick="changeColor('#2D5FC4', this)"></div>
+        <div class="swatch" style="background:#fee904" onclick="changeColor('#fee904', this)"></div>
+    </div>
+
+    <div class="hints">Drag SD card up to extract. Keyboard enabled (Arrows, Enter, Backspace or 1,2,3,4,5,6).</div>
+
+    <script>
+        // --- 1. BASE SYSTEM & VIRTUAL SD ---
+        let wordlist = [];
+        let isPoweredOn = true;
+        let sdReady = true; 
+        let virtualSd = JSON.parse(localStorage.getItem('seedmate_sd')) || Array(8).fill(null);
+
+        const canvas = document.getElementById('tft');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = "top";
+
+        function clearDeviceRAM() {
+            entropyBits = ""; 
+            targetBits = 128; 
+            lastInputLen = 0; 
+            currentSeedWords = [];
+            checksumDetails = {};
+            finalByteArray.fill(0); 
+            
+            ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0, dice: 0, hash: 0, diceHashChar: 0 };
+            createMode = "";
+            sdPage = 0;
+            ioStatusMsg = "";
+            lastIoSlot = -1;
+            
+            diceHashStr = "";
+            tmrHexList = [];
+
+            cardRankPtr = 0;
+            cardSuitPtr = 0;
+            cardFieldPtr = 0;
+            cardHistoryStart = [];
+            cardHistoryLen = [];
+
+            bip85Size = 0;
+            bip85Index = 0;
+            bip85Cursor = 0;
+
+            tripleViewState = 0;
+            
+            kbWordIdx = 1;
+            kbCharIdx = 0;
+            kbWord = "";
+            kbFoundWord = "";
+            kbValidMask = Array(27).fill(true);
+        }
+
+        // SD Drag Logic
+        const sdCard = document.getElementById('sd-card');
+        let isDraggingSD = false;
+        let startY = 0;
+
+        sdCard.addEventListener('mousedown', (e) => { isDraggingSD = true; startY = e.clientY; });
+        document.addEventListener('mousemove', (e) => {
+            if (!isDraggingSD) return;
+            let dy = e.clientY - startY;
+            if (dy > 10) { 
+                sdCard.style.top = '-10px'; 
+                sdReady = true;
+                isDraggingSD = false;
+                if(isPoweredOn) render();
+            } else if (dy < -10) { 
+                sdCard.style.top = '-60px'; 
+                sdReady = false;
+                isDraggingSD = false;
+                if(isPoweredOn) render();
+            }
+        });
+        document.addEventListener('mouseup', () => isDraggingSD = false);
+
+        // Power Switch Logic
+        const powerBtn = document.getElementById('powerBtn');
+        powerBtn.addEventListener('click', () => {
+            isPoweredOn = !isPoweredOn;
+            if (isPoweredOn) {
+                powerBtn.classList.add('on');
+                document.getElementById('led-bottom').classList.add('white-on');
+                document.getElementById('led-top').style.background = '#0C5C33';
+                machineState = STATES.INIT;
+                render();
+            } else {
+                powerBtn.classList.remove('on');
+                document.getElementById('led-bottom').classList.remove('white-on');
+                document.getElementById('led-top').classList.remove('white-on');
+                document.getElementById('led-top').style.background = '#111';
+                ctx.fillStyle = "#05130C";
+                ctx.fillRect(0, 0, 160, 128);
+                clearDeviceRAM();
+            }
+        });
+
+        function blinkLed() {
+            if(!isPoweredOn) return;
+            const led = document.getElementById('led-top');
+            led.classList.add('white-on');
+            led.style.background = '#FFF';
+            setTimeout(() => {
+                led.classList.remove('white-on');
+                led.style.background = '#0C5C33';
+            }, 80);
+        }
+
+        function changeColor(hex, el) {
+            document.documentElement.style.setProperty('--device', hex);
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        // --- 2. GRAPHICS ENGINE  ---
+        function black_screen() {
+            ctx.fillStyle = "#05130C";
+            ctx.fillRect(0, 0, 320, 256);
+        }
+
+        function drawtext(x, y, text, color, bg = "#05130C", size = 1) {
+            const scale = 2; // <-- ESTO ERA LO QUE FALTABA Y CRASHEABA EL CÓDIGO
+            if (bg !== null) {
+                ctx.fillStyle = bg;
+                ctx.fillRect(x * scale, y * scale, text.length * 6 * size * scale, 10 * size * scale); 
+            }
+            ctx.fillStyle = color;
+            ctx.font = (10 * size * scale) + "px 'Consolas', 'Courier New', monospace";
+            ctx.fillText(text, x * scale, y * scale);
+        }
+
+        function drawFastHLine(x, y, w, color) { ctx.fillStyle = color; ctx.fillRect(x * 2, y * 2, w * 2, 2); }
+        function drawFastVLine(x, y, h, color) { ctx.fillStyle = color; ctx.fillRect(x * 2, y * 2, 2, h * 2); }
+
+        const bmp_camera      = [ 0x0700, 0x0880, 0xF078, 0x8708, 0x8888, 0x9048, 0x9048, 0x8888, 0x8708, 0x8008, 0xFFF8 ];
+        const bmp_arrow_up    = [ 0x2000, 0x7000, 0xF800, 0x2000, 0x2000, 0x2000 ];
+        const bmp_arrow_down  = [ 0x2000, 0x2000, 0x2000, 0xF800, 0x7000, 0x2000 ];
+        const bmp_arrow_left  = [ 0x2000, 0x6000, 0xFC00, 0x6000, 0x2000 ];
+        const bmp_arrow_right = [ 0x1000, 0x1800, 0xFC00, 0x1800, 0x1000 ];
+        
+        function draw_bitmap(x, y, w, h, bitmap, color) {
+            ctx.fillStyle = color;
+            for (let j = 0; j < h; j++) {
+                let row = bitmap[j];
+                for (let i = 0; i < w; i++) {
+                    if (row & (0x8000 >> i)) ctx.fillRect((x + i) * 2, (y + j) * 2, 2, 2);
+                }
+            }
+        }
+
+        function print_up_arrow(x, y) { draw_bitmap(x, y - 6, 5, 6, bmp_arrow_up, "white"); }
+        function print_down_arrow(x, y) { draw_bitmap(x, y - 6, 5, 6, bmp_arrow_down, "white"); }
+        function print_left_arrow(x, y) { draw_bitmap(x, y - 5, 6, 5, bmp_arrow_left, "white"); }
+        function print_rigth_arrow(x, y) { draw_bitmap(x, y - 5, 6, 5, bmp_arrow_right, "white"); }
+        function print_camera(x, y, safe) {
+            let color = safe ? "#00FF00" : "#FF0000";
+            draw_bitmap(x, y - 10, 13, 11, bmp_camera, color);
+        }
+
+        function print_cursor_grid() {
+            drawFastHLine(60, 105, 90, "white");
+            drawFastHLine(60, 115, 90, "white");
+            drawFastHLine(60, 125, 90, "white");
+            drawFastVLine(60, 105, 20, "white");
+            drawFastVLine(90, 105, 20, "white");
+            drawFastVLine(120, 105, 20, "white");
+            drawFastVLine(150, 105, 20, "white");
+        }
+
+        function grid_menu1() { print_cursor_grid(); print_up_arrow(103, 114); print_down_arrow(103, 123); drawtext(130, 107, "OK", "white", null); }
+        function grid_menu2() { print_cursor_grid(); print_up_arrow(103, 114); print_down_arrow(103, 123); drawtext(130, 107, "OK", "white", null); drawtext(64, 107, "BACK", "white", null); }
+        function grid_coins() { print_cursor_grid(); drawtext(64, 117, "HEAD", "white", null); drawtext(94, 117, "TAIL", "white", null); drawtext(67, 107, "DEL", "white", null); }
+        function grid_dices() { 
+            print_cursor_grid(); 
+            drawtext(64, 107, "1=01", "white", null); drawtext(94, 107, "2=10", "white", null); drawtext(124, 107, "3=11", "white", null); 
+            drawtext(64, 117, "4=0 ", "white", null); drawtext(94, 117, "5=1 ", "white", null); drawtext(124, 117, "6=00", "white", null); 
+        }
+        function grid_keyboard() {
+            print_cursor_grid(); print_up_arrow(103, 114); print_down_arrow(103, 123);
+            print_left_arrow(73, 123); print_rigth_arrow(133, 123);
+            drawtext(130, 107, "OK", "white", null); drawtext(67, 107, "DEL", "white", null);
+        }
+        function grid_hash_kb() {
+            print_cursor_grid();
+            print_left_arrow(73, 123); print_rigth_arrow(133, 123);
+            drawtext(130, 107, "OK", "white", null); drawtext(67, 107, "DEL", "white", null);
+        }
+        function grid_OK_only() { print_cursor_grid(); drawtext(130, 107, "OK", "white", null); }
+        function grid_menuwr() { 
+            print_cursor_grid(); print_up_arrow(103, 114); print_down_arrow(103, 123); drawtext(130, 107, "OK", "white", null);
+            drawtext(64, 107, "LIST", "white", null); drawtext(122, 117, "PAG+", "white", null); drawtext(62, 117, "PAG-", "white", null); 
+        }
+
+        function drawMenu(options, ptr, isMainMenu = false) {
+            for (let i = 0; i < options.length; i++) {
+                let color = (i === ptr) ? "orange" : "white";
+                drawtext(1, 5 + (i * 10), options[i], color);
+            }
+            if (isMainMenu) {
+                if (sdReady) drawtext(10, 118, "SD OK", "#00FF00");
+                grid_menu1();
+            } else {
+                grid_menu2();
+            }
+        }
+
+        function renderEntropyBuilding() {
+            let completedWords = Math.floor(entropyBits.length / 11);
+            let remBits = entropyBits.length % 11;
+            
+            if (remBits > 0) {
+                let cursor_x = 1;
+                for (let i = 0; i < remBits; i++) {
+                    let abs_idx = completedWords * 11 + i;
+                    let is_magenta = (abs_idx >= entropyBits.length - lastInputLen);
+                    drawtext(cursor_x, 35, entropyBits[abs_idx], is_magenta ? "magenta" : "orange");
+                    cursor_x += 6; 
+                }
+            } else if (entropyBits.length === 0) {
+                drawtext(1, 35, "WAITING FOR INPUT...", "gray");
+            }
+
+            let y_offset = 45;
+            for (let r = 0; r < Math.min(5, completedWords); r++) {
+                let w_idx = completedWords - 1 - r;
+                let chunk = entropyBits.substring(w_idx * 11, (w_idx + 1) * 11);
+                let dec = parseInt(chunk, 2);
+                
+                let cx2 = 1;
+                for(let b=0; b<11; b++){
+                     drawtext(cx2, y_offset, chunk[b], "green");
+                     cx2 += 6;
+                }
+                drawtext(70, y_offset, dec.toString().padStart(4, '0'), "green");
+                drawtext(100, y_offset, wordlist[dec] || "", "green");
+                y_offset += 10;
+            }
+        }
+
+        // --- 3. CRYPTOGRAPHIC & DATA LOGIC ---
+        async function calculateSHA256(byteArray) {
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', byteArray);
+            return new Uint8Array(hashBuffer);
+        }
+
+        async function hmacSha512(key, data) {
+            const cryptoKey = await window.crypto.subtle.importKey('raw', key, {name: 'HMAC', hash: 'SHA-512'}, false, ['sign']);
+            const sig = await window.crypto.subtle.sign('HMAC', cryptoKey, data);
+            return new Uint8Array(sig);
+        }
+
+        let entropyBits = ""; 
+        let targetBits = 128; 
+        let lastInputLen = 0; 
+        let currentSeedWords = [];
+        let checksumDetails = {};
+        let finalByteArray = new Uint8Array(32); 
+
+        let createMode = "";
+        let diceHashStr = "";
+        let tmrHexList = [];
+        let cardRankPtr = 0;
+        let cardSuitPtr = 0;
+        let cardFieldPtr = 0; 
+        let cardHistoryStart = [];
+        let cardHistoryLen = [];
+
+        let bip85Size = 0; 
+        let bip85Index = 0;
+        let bip85Cursor = 0;
+
+        let tripleViewState = 0; 
+        
+        let kbWordIdx = 1;
+        let kbCharIdx = 0;
+        let kbWord = "";
+        let kbFoundWord = "";
+        let kbValidMask = Array(27).fill(true);
+
+        const card_entropy_map = [
+            "00000", "00001", "00010", "00011", "00100", "00101", "00110", "00111", "01000", "01001", "01010", "01011", "01100",
+            "01101", "01110", "01111", "10000", "10001", "10010", "10011", "10100", "10101", "10110", "10111", "11000", "11001",
+            "11010", "11011", "11100", "11101", "11110", "11111", "0000",  "0001",  "0010",  "0011",  "0100",  "0101",  "0110",
+            "0111",  "1000",  "1001",  "1010",  "1011",  "1100",  "1101",  "1110",  "1111",  "00",    "01",    "10",    "11"
+        ];
+        const card_rank_chars = [ 'A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K' ];
+        const card_suit_chars = [ 'C', 'D', 'H', 'S' ];
+
+        function appendEntropyBit(bitStr) {
+            if (entropyBits.length < targetBits) {
+                entropyBits += bitStr;
+                lastInputLen = bitStr.length;
+            }
+        }
+
+        function deleteLastEntropyBit() {
+            if (entropyBits.length > 0) {
+                entropyBits = entropyBits.slice(0, -lastInputLen || -1);
+                lastInputLen = 0;
+            }
+        }
+
+        async function generateFinalSeed() {
+            const bytesLen = targetBits / 8;
+            const entropyBytes = new Uint8Array(bytesLen);
+            for (let i = 0; i < bytesLen; i++) {
+                entropyBytes[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
+                finalByteArray[i] = entropyBytes[i];
+            }
+
+            const hash = await calculateSHA256(entropyBytes);
+            const checksumLength = targetBits === 128 ? 4 : 8;
+            const firstHashByteBin = hash[0].toString(2).padStart(8, '0');
+            const checksumBits = firstHashByteBin.substring(0, checksumLength);
+
+            const lastWordBits = entropyBits.substring(targetBits - (11 - checksumLength)) + checksumBits;
+            const lastWordIndex = parseInt(lastWordBits, 2);
+            checksumDetails = {
+                b_str: entropyBits.substring(targetBits - (11 - checksumLength)),
+                c_str: checksumBits,
+                decimal: lastWordIndex,
+                word: wordlist[lastWordIndex] || ""
+            };
+
+            const fullBits = entropyBits + checksumBits;
+            const totalWords = targetBits === 128 ? 12 : 24;
+            currentSeedWords = [];
+            
+            for (let i = 0; i < totalWords; i++) {
+                const chunk = fullBits.substring(i * 11, (i + 1) * 11);
+                const index = parseInt(chunk, 2);
+                currentSeedWords.push({ word: wordlist[index] || "", index: index });
+            }
+        }
+
+        async function processTripleMnemonic() {
+            drawtext(50, 60, "COMPUTING TRIPLE", "white");
+            drawtext(50, 75, "MNEMONIC...", "white");
+            
+            const firstHalf = new Uint8Array(16);
+            for (let i = 0; i < 16; i++) {
+                firstHalf[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
+                finalByteArray[i] = firstHalf[i];
+            }
+            
+            let hash1 = await calculateSHA256(firstHalf);
+            let firstChecksum = hash1[0].toString(2).padStart(8, '0').substring(0, 4);
+            let currentEntropy = entropyBits.substring(0, 128) + firstChecksum + entropyBits.substring(132, 256);
+            
+            let iters = 0;
+            while (true) {
+                let fullEntropyBytes = new Uint8Array(32);
+                for (let i = 0; i < 32; i++) {
+                    fullEntropyBytes[i] = parseInt(currentEntropy.substring(i * 8, (i + 1) * 8), 2);
+                }
+                
+                let hash24 = await calculateSHA256(fullEntropyBytes);
+                let masterChecksum = hash24[0].toString(2).padStart(8, '0');
+                
+                let secondSeedBits = currentEntropy.substring(132, 256) + masterChecksum.substring(0, 4);
+                let secondSeedBytes = new Uint8Array(16);
+                for (let i = 0; i < 16; i++) {
+                    secondSeedBytes[i] = parseInt(secondSeedBits.substring(i * 8, (i + 1) * 8), 2);
+                }
+                
+                let hash12_sec = await calculateSHA256(secondSeedBytes);
+                let secondChecksum = hash12_sec[0].toString(2).padStart(8, '0').substring(0, 4);
+                
+                if (masterChecksum.substring(4, 8) === secondChecksum) {
+                    entropyBits = currentEntropy + masterChecksum;
+                    break;
+                }
+                
+                let secondHalfBin = currentEntropy.substring(132, 256);
+                let secondHalfBigInt = BigInt('0b' + secondHalfBin) + 1n;
+                let newSecondHalfBin = secondHalfBigInt.toString(2).padStart(124, '0');
+                if (newSecondHalfBin.length > 124) newSecondHalfBin = newSecondHalfBin.substring(newSecondHalfBin.length - 124);
+                currentEntropy = currentEntropy.substring(0, 132) + newSecondHalfBin;
+                
+                iters++;
+                if (iters > 3000) break;
+            }
+            
+            for (let i = 0; i < 32; i++) {
+                finalByteArray[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
+            }
+            
+            const totalWords = 24;
+            currentSeedWords = [];
+            for (let i = 0; i < totalWords; i++) {
+                const chunk = entropyBits.substring(i * 11, (i + 1) * 11);
+                const index = parseInt(chunk, 2);
+                currentSeedWords.push({ word: wordlist[index] || "", index: index });
+            }
+        }
+
+        async function processBIP85() {
+            let mnemonicStr = currentSeedWords.map(w => w.word).join(" ");
+            const enc = new TextEncoder();
+            const salt = enc.encode("mnemonic");
+            const passKey = await window.crypto.subtle.importKey('raw', enc.encode(mnemonicStr), {name: 'PBKDF2'}, false, ['deriveBits']);
+            const seedBuffer = await window.crypto.subtle.deriveBits({name: 'PBKDF2', salt: salt, iterations: 2048, hash: 'SHA-512'}, passKey, 512);
+            let seed = new Uint8Array(seedBuffer);
+
+            let I = await hmacSha512(enc.encode("Bitcoin seed"), seed);
+            let k = I.slice(0, 32);
+            let c = I.slice(32, 64);
+
+            let reqSize = (bip85Size === 0) ? 12 : 24;
+            const path = [
+                0x80000000 | 83696968,
+                0x80000000 | 39,
+                0x80000000 | 0,
+                0x80000000 | reqSize,
+                0x80000000 | bip85Index
+            ];
+
+            const n = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141');
+
+            for (let i = 0; i < 5; i++) {
+                let data = new Uint8Array(37);
+                data[0] = 0x00;
+                data.set(k, 1);
+                let p = path[i];
+                data[33] = (p >> 24) & 0xFF;
+                data[34] = (p >> 16) & 0xFF;
+                data[35] = (p >> 8) & 0xFF;
+                data[36] = p & 0xFF;
+
+                let I_new = await hmacSha512(c, data);
+                let I_L = I_new.slice(0, 32);
+                
+                let k_BigInt = BigInt('0x' + Array.from(k).map(b => b.toString(16).padStart(2, '0')).join(''));
+                let IL_BigInt = BigInt('0x' + Array.from(I_L).map(b => b.toString(16).padStart(2, '0')).join(''));
+                let new_k = (k_BigInt + IL_BigInt) % n;
+
+                let new_k_hex = new_k.toString(16).padStart(64, '0');
+                for (let j = 0; j < 32; j++) k[j] = parseInt(new_k_hex.slice(j*2, j*2+2), 16);
+                
+                c = I_new.slice(32, 64);
+            }
+
+            let bip85_hmac_out = await hmacSha512(enc.encode("bip-entropy-from-k"), k);
+            
+            targetBits = reqSize === 12 ? 128 : 256;
+            entropyBits = "";
+            let bytesLen = targetBits / 8;
+            for(let i=0; i<bytesLen; i++) {
+                finalByteArray[i] = bip85_hmac_out[i];
+                entropyBits += finalByteArray[i].toString(2).padStart(8, '0');
+            }
+            await generateFinalSeed();
+        }
+
+        function kbUpdateValidLetters() {
+            kbValidMask.fill(false);
+            let matches = 0;
+            let lastMatch = "";
+            let prefix = kbWord.toLowerCase();
+            
+            if (prefix.length === 0) {
+                kbValidMask.fill(true);
+                kbValidMask[23] = false; 
+                kbValidMask[26] = false; 
+                kbFoundWord = "";
+                return;
+            }
+
+            for (let w of wordlist) {
+                if (w.startsWith(prefix)) {
+                    matches++;
+                    lastMatch = w;
+                    if (w.length > prefix.length) {
+                        let nextChar = w[prefix.length].toUpperCase();
+                        let charCode = nextChar.charCodeAt(0) - 65;
+                        if (charCode >= 0 && charCode < 26) kbValidMask[charCode] = true;
+                    } else if (w.length === prefix.length) {
+                        kbValidMask[26] = true;
+                    }
+                }
+            }
+            
+            if (matches === 1 && kbWord.length > 0) {
+                kbFoundWord = lastMatch.toUpperCase();
+                kbValidMask[26] = true;
+            } else {
+                kbFoundWord = "";
+                kbValidMask[26] = false;
+            }
+        }
+
+        function kbNavigate(step) {
+            let current = kbCharIdx;
+            for (let attempts = 0; attempts < 27; attempts++) {
+                current = (current + step + 27) % 27;
+                if (kbValidMask[current]) {
+                    kbCharIdx = current;
+                    return;
+                }
+            }
+        }
+
+        function kbNavigateVertical(step) {
+            let cx = kbCharIdx % 9;
+            let cy = Math.floor(kbCharIdx / 9);
+            let bestDist = 9999;
+            let bestIdx = kbCharIdx;
+
+            for (let i = 0; i < 27; i++) {
+                if (!kbValidMask[i]) continue;
+                let tx = i % 9;
+                let ty = Math.floor(i / 9);
+                let forward_dist = 0;
+                let lateral_dist = 0;
+                
+                if (step > 0) {
+                    forward_dist = ty - cy;
+                    lateral_dist = Math.abs(tx - cx);
+                } else {
+                    forward_dist = cy - ty;
+                    lateral_dist = Math.abs(tx - cx);
+                }
+                
+                let score = 0;
+                if (forward_dist > 0) {
+                    score = (lateral_dist === 0) ? forward_dist : 100 + forward_dist + (lateral_dist * 4);
+                } else {
+                    let wrapped_forward = forward_dist + 3;
+                    score = (lateral_dist === 0) ? 200 + wrapped_forward : 300 + wrapped_forward + (lateral_dist * 4);
+                }
+                
+                if (score < bestDist) {
+                    bestDist = score;
+                    bestIdx = i;
+                }
+            }
+            kbCharIdx = bestIdx;
+        }
+
+        function writeToVirtualSD(slot) {
+            if (!sdReady) return false;
+            let buffer = new Uint8Array(512);
+            let xor_byte = Math.floor(Math.random() * 256); 
+            buffer[66] = xor_byte; 
+            buffer[65] = (targetBits === 128) ? 0 : 1; 
+            
+            let checksum = 1; 
+            let bytesLen = targetBits === 128 ? 16 : 32;
+            for (let i = 0; i < bytesLen; i++) {
+                buffer[i] = finalByteArray[i] ^ xor_byte;
+                checksum = (checksum + buffer[i]) & 0xFF;
+            }
+            buffer[64] = checksum; 
+            
+            virtualSd[slot] = Array.from(buffer);
+            localStorage.setItem('seedmate_sd', JSON.stringify(virtualSd));
+            return true;
+        }
+
+        async function loadFromVirtualSD(slot) {
+            if (!sdReady) return 1; 
+            let buffer = virtualSd[slot];
+            if (!buffer || buffer.length === 0) return 2; 
+            
+            let sum = 1; 
+            let xor_byte = buffer[66];
+            let size_flag = buffer[65];
+            let bytesLen = size_flag === 0 ? 16 : 32;
+            targetBits = size_flag === 0 ? 128 : 256;
+
+            for(let i=0; i < bytesLen; i++) {
+                finalByteArray[i] = buffer[i] ^ xor_byte;
+                sum = (sum + buffer[i]) & 0xFF;
+            }
+
+            if (sum === buffer[64]) {
+                entropyBits = "";
+                for(let i=0; i < bytesLen; i++) {
+                    entropyBits += finalByteArray[i].toString(2).padStart(8, '0');
+                }
+                await generateFinalSeed(); 
+                return 0; 
+            }
+            return 2; 
+        }
+
+        function getSDPreview(slot) {
+            if (!sdReady) return "   "; 
+            let buffer = virtualSd[slot];
+            if (!buffer || buffer.length === 0) return "   ";
+            let sum = 1;
+            let bytesLen = buffer[65] === 0 ? 16 : 32;
+            for(let i=0; i < bytesLen; i++) sum = (sum + buffer[i]) & 0xFF;
+            if (sum === buffer[64]) return buffer[65] === 0 ? "12W" : "24W";
+            return "   ";
+        }
+
+        // --- 4. QR CODE ---
+        function renderQR(type) {
+            let qr;
+            if (type === 'STANDARD') {
+                qr = qrcode(0, 'M');
+                let seedqr_str = "";
+                for (let i = 0; i < currentSeedWords.length; i++) seedqr_str += currentSeedWords[i].index.toString().padStart(4, '0');
+                qr.addData(seedqr_str, 'Numeric');
+            } else if (type === 'COMPACT') {
+                // Version 1 for 12W, Version 3 for 24W to prevent crashes on capacity
+                qr = qrcode(targetBits === 128 ? 1 : 3, 'L'); 
+                let bytesLen = targetBits / 8;
+                let data = new Uint8Array(bytesLen);
+                for(let i=0; i<bytesLen; i++) data[i] = finalByteArray[i];
+                let byteStr = String.fromCharCode.apply(null, data);
+                qr.addData(byteStr, 'Byte');
+            }
+            
+            qr.make();
+            let moduleCount = qr.getModuleCount();
+            let scale = Math.floor(128 / moduleCount); 
+            if(scale < 1) scale = 1;
+            let margin = 4 * scale;
+            let imgSize = moduleCount * scale;
+            
+            let x_offset = (160 - imgSize) / 2; 
+            let y_offset = (128 - imgSize) / 2; 
+            
+            ctx.fillStyle = "white";
+            ctx.fillRect((x_offset - margin), (y_offset - margin), (imgSize + 2*margin), (imgSize + 2*margin));
+            
+            ctx.fillStyle = "black";
+            for (let r = 0; r < moduleCount; r++) {
+                for (let c = 0; c < moduleCount; c++) {
+                    if (qr.isDark(r, c)) ctx.fillRect((x_offset + c*scale)*2, (y_offset + r*scale)*2, scale*2, scale*2);
+                }
+            }
+            print_camera(2, 50, false);
+            print_camera(2, 80, false);
+            print_camera(145, 50, false);
+            print_camera(145, 80, false);
+            print_left_arrow(5, 123);
+        }
+
+        // --- 5. STATE MACHINE ---
+        const STATES = { 
+            INIT: -1, MAIN: 0, CREATE: 1, SIZE: 2, COINS_INPUT: 3, 
+            CHECKSUM_DETAILS: 4, SHOW_SEED: 5, QR_STD: 6, QR_CMPCT: 7, 
+            SD_WRITE: 8, SEL_INPUT: 9, SD_READ: 10, SD_ERASE: 11,
+            DICE_MODE: 12, HASH_MODE: 13, DICE_INPUT: 14, DICE_HASH_INPUT: 15, CARD_INPUT: 16, TMR_INPUT: 17,
+            PROCESS_TRIPLE: 18, SHOW_TRIPLE_CHKSUM_12: 19, SHOW_TRIPLE_CHKSUM_24: 20,
+            CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24
+        };
+        let machineState = STATES.INIT;
+        let ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0 };
+        let sd_page = 0;
+        let io_status = "";
+
+        const menu_main = ["CREATE NEW SEED WORDS", "LOAD SEED WORDS", "BIP85 CHILD SEED", "SHAMIR SECRET SHARE", "SEED WORD XOR", "OBFUSCATION", "MNEMONIC TO CARDS", "ERASE SD", "RESOURCES", "SETTINGS"];
+        const menu_create = ["THROW COINS", "ROLL DICE", "RANDOM WORD PICK", "DRAW CARDS", "STOPWATCH TEST ONLY", "TRIPLE MNEMONIC"];
+        const menu_size = ["12 WORDS", "24 WORDS"];
+        const menu_input = ["FROM KEYBOARD", "FROM SD"];
+
+        function render() {
+            if (!isPoweredOn) return;
+            black_screen();
+
+            switch(machineState) {
+                case STATES.INIT:
+                    drawtext(10, 10, "SEEDMATE", "white", "#05130C", 3);
+                    drawtext(1, 40, "KEEP YOUR SEEDS OFFLINE", "#00FF00");
+                    drawtext(1, 51, "NO PHONE PHOTOS/QR", "red");
+                    drawtext(1, 62, "SD AWAY FROM A COMPUTER", "red");
+                    print_camera(5, 95, true);
+                    drawtext(23, 87, "=QR Safe for phone", "#00FF00");
+                    print_camera(5, 110, false);
+                    drawtext(23, 102, "=QR NOT Safe for phone", "red");
+                    drawtext(5, 119, "(Press any button)", "white");
+                    drawtext(120, 119, "v1.7", "white");
+                    break;
+                case STATES.MAIN: drawMenu(menu_main, ptrs.main, true); break;
+                case STATES.CREATE: drawMenu(menu_create, ptrs.create, false); break;
+                case STATES.SIZE: drawMenu(menu_size, ptrs.size, false); break;
+                case STATES.SEL_INPUT: drawMenu(menu_input, ptrs.input, false); break;
+                case STATES.DICE_MODE: drawMenu(menu_dice, ptrs.dice, false); break;
+                case STATES.HASH_MODE: drawMenu(menu_hash, ptrs.hash, false); break;
+                case STATES.CHILD_CONFIG:
+                    drawtext(1, 10, "CHILD SIZE:", "white");
+                    drawtext(80, 10, "BIP85 INDEX:", "white");
+                    
+                    let sizeColor = (bip85Cursor === 0) ? "orange" : "white";
+                    let idxColor = (bip85Cursor === 1) ? "orange" : "white";
+                    
+                    let sizeStr = (bip85Size === 0) ? "12 WORDS" : "24 WORDS";
+                    drawtext(10, 30, sizeStr, sizeColor);
+                    drawtext(100, 30, bip85Index.toString(), idxColor);
+                    
+                    print_cursor_grid(); print_up_arrow(103, 114); print_down_arrow(103, 123);
+                    print_left_arrow(73, 123); print_rigth_arrow(133, 123);
+                    drawtext(130, 106, "OK", "white", null); drawtext(64, 106, "BACK", "white", null);
+                    break;
+
+                case STATES.COINS_INPUT:
+                    drawtext(1, 5, `THROW COINS up to ${targetBits} bits`, "white");
+                    renderEntropyBuilding();
+                    grid_coins();
+                    break;
+
+                case STATES.DICE_INPUT:
+                    drawtext(1, 5, `ROLL DICE up to ${targetBits} bits`, "white");
+                    renderEntropyBuilding();
+                    grid_dices();
+                    break;
+
+                case STATES.DICE_HASH_INPUT:
+                    let target_rolls = (targetBits === 128) ? 50 : 99;
+                    let len = diceHashStr.length;
+                    drawtext(20, 5, `Dice rolls: ${len.toString().padStart(3,'0')}/${target_rolls.toString().padStart(3,'0')}`, "white");
+                    
+                    for (let i = 0; i < len; i++) {
+                        let wrap = Math.floor(i / 200);
+                        let color = wrap === 0 ? "cyan" : (wrap === 1 ? "yellow" : "magenta");
+                        let wrapped_i = i % 200;
+                        let line = Math.floor(wrapped_i / 25);
+                        let col = wrapped_i % 25;
+                        drawtext(5 + col * 6, 14 + line * 9, diceHashStr[i], color);
+                    }
+
+                    const keys = ["1", "2", "3", "4", "5", "6", "DONE"];
+                    const kx = [10, 30, 50, 70, 90, 110, 130];
+                    for (let i = 0; i < 7; i++) {
+                        let color = (i === ptrs.diceHashChar) ? "orange" : "white";
+                        if (i === 6) { 
+                            if (ptrs.diceHashChar === 6) color = "orange";
+                            else if (len >= target_rolls) color = "#00FF00";
+                            else color = "gray";
+                        }
+                        drawtext(kx[i], 90, keys[i], color);
+                    }
+                    grid_hash_kb();
+                    break;
+
+                case STATES.CARD_INPUT:
+                    drawtext(1, 5, `DRAW CARDS UP TO ${targetBits} BITS`, "white");
+                    drawtext(45, 15, `${entropyBits.length.toString().padStart(3, '0')}/${targetBits} bits`, "white");
+                    
+                    let rank_color = (cardFieldPtr === 0) ? "orange" : "white";
+                    let suit_color = (cardFieldPtr === 1) ? "orange" : "white";
+                    drawtext(1, 25, "CARD:", "white");
+                    drawtext(40, 25, card_rank_chars[cardRankPtr], rank_color);
+                    drawtext(48, 25, card_suit_chars[cardSuitPtr], suit_color);
+                    
+                    let card_idx = cardSuitPtr * 13 + cardRankPtr;
+                    let card_bits = card_entropy_map[card_idx];
+                    drawtext(62, 25, "BITS:", "white");
+                    drawtext(96, 25, card_bits, "cyan");
+
+                    renderEntropyBuilding();
+                    grid_keyboard();
+                    break;
+
+                case STATES.TMR_INPUT:
+                    drawtext(1, 5, "STOP timer to set entropy", "white");
+                    drawtext(45, 15, `${entropyBits.length.toString().padStart(3, '0')}/${targetBits} bits`, "white");
+                    
+                    let tx = 2, ty = 30;
+                    for (let i = 0; i < tmrHexList.length; i++) {
+                        drawtext(tx, ty, tmrHexList[i], "white");
+                        tx += 28;
+                        if (tx > 140) { tx = 2; ty += 10; }
+                    }
+                    grid_OK_only();
+                    break;
+
+                case STATES.WRITE_WORD:
+                    drawtext(1, 10, "WORD:", "white");
+                    drawtext(35, 10, kbWordIdx.toString() + ".", "white");
+                    if (kbWord.length > 0) drawtext(60, 10, kbWord, "white");
+                    
+                    if (kbFoundWord) {
+                        drawtext(60, 10, kbFoundWord, "green");
+                        drawtext(130, 60, "OK", "green");
+                    } else {
+                        drawtext(130, 60, "OK", "gray");
+                    }
+
+                    if (kbWordIdx > 1) {
+                        let pBits = entropyBits.substring((kbWordIdx-2)*11, (kbWordIdx-1)*11);
+                        let pIdx = parseInt(pBits, 2);
+                        drawtext(45, 80, (kbWordIdx-1).toString() + ".", "green");
+                        drawtext(60, 80, wordlist[pIdx], "green");
+                    }
+
+                    let alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                    let cxK = 10, cyK = 30;
+                    for (let i = 0; i < 26; i++) {
+                        let color = (kbCharIdx === i) ? "orange" : (kbValidMask[i] ? "white" : "gray");
+                        drawtext(cxK, cyK, alpha[i], color);
+                        cxK += 15;
+                        if (cxK > 120) { cxK = 10; cyK += 15; }
+                    }
+                    let okCol = (kbCharIdx === 26) ? "orange" : (kbFoundWord ? "green" : "gray");
+                    drawtext(cxK, cyK, "OK", okCol);
+                    grid_keyboard();
+                    break;
+                
+                case STATES.WORD_LIST_ERROR:
+                    drawtext(10, 10, "INCORRECT SET OF WORDS", "red");
+                    drawtext(10, 25, "PRESS ANY BUTTON", "white");
+                    break;
+
+                case STATES.SHOW_TRIPLE_CHKSUM_12:
+                    drawtext(1, 5, "Word 12 Checksum:", "white");
+                    let bStr12 = entropyBits.substring(121, 128);
+                    let cStr12 = entropyBits.substring(128, 132);
+                    let dec12 = parseInt(bStr12 + cStr12, 2);
+                    drawtext(1, 25, bStr12, "orange"); drawtext(1 + 7*6, 25, cStr12, "cyan");
+                    drawtext(1, 40, "decimal: ", "white"); drawtext(55, 40, dec12.toString().padStart(4, '0'), "yellow");
+                    drawtext(1, 55, "word: ", "white"); drawtext(37, 55, wordlist[dec12], "green");
+                    grid_OK_only();
+                    break;
+
+                case STATES.SHOW_TRIPLE_CHKSUM_24:
+                    drawtext(1, 5, "Word 24 Checksum:", "white");
+                    let bStr24 = entropyBits.substring(253, 256);
+                    let cStr24 = entropyBits.substring(256, 264);
+                    let dec24 = parseInt(bStr24 + cStr24, 2);
+                    drawtext(1, 25, bStr24, "orange"); drawtext(1 + 3*6, 25, cStr24, "cyan");
+                    drawtext(1, 40, "decimal: ", "white"); drawtext(55, 40, dec24.toString().padStart(4, '0'), "yellow");
+                    drawtext(1, 55, "word: ", "white"); drawtext(37, 55, wordlist[dec24], "green");
+                    grid_OK_only();
+                    break;
+
+                case STATES.CHECKSUM_DETAILS:
+                    drawtext(1, 5, "Checksum word:", "white");
+                    let b_len = targetBits === 128 ? 7 : 3;
+                    drawtext(1, 15, checksumDetails.b_str, "orange");
+                    drawtext(1 + (b_len * 6), 15, checksumDetails.c_str, "cyan");
+                    drawtext(1, 25, "decimal: ", "white");
+                    drawtext(55, 25, checksumDetails.decimal.toString().padStart(4, '0'), "yellow");
+                    drawtext(1, 35, "word: ", "white");
+                    drawtext(37, 35, checksumDetails.word, "green");
+                    grid_OK_only();
+                    break;
+
+                case STATES.SHOW_SEED:
+                    let totalW = targetBits === 128 ? 12 : 24;
+                    let displayWords = currentSeedWords;
+                    let startWordIdx = 0;
+                    
+                    if (createMode === "TRIPLE") {
+                        if (tripleViewState === 1) { totalW = 12; displayWords = currentSeedWords.slice(0, 12); }
+                        else if (tripleViewState === 2) { totalW = 12; displayWords = currentSeedWords.slice(12, 24); startWordIdx = 12; }
+                    }
+
+                    let y_index = 1;
+                    let x_index = 0;
+                    
+                    for (let i = 0; i < totalW; i++) {
+                        let isLast = (i === totalW - 1) && (tripleViewState === 0 || tripleViewState === 1 || createMode !== "TRIPLE");
+                        let dispNum = i + 1 + startWordIdx;
+                        let numStr = dispNum.toString();
+                        
+                        drawtext(x_index, y_index, numStr, "white");
+                        drawtext(x_index + 15, y_index, displayWords[i].word, isLast ? "#3FBF7F" : "white");
+                        
+                        y_index += 9;
+                        if (y_index > 100) { x_index = 70; y_index = 0; }
+                    }
+                    
+                    drawtext(7, 117, "SAVE TO SD", "orange");
+                    print_left_arrow(0, 123);
+                    drawtext(135, 80, "SEED", "orange");
+                    drawtext(145, 90, "QR", "orange");
+                    print_rigth_arrow(150, 105);
+                    drawtext(90, 117, "QR COMPACT", "orange");
+                    print_rigth_arrow(150, 123);
+                    print_camera(145, 20, false);
+                    
+                    if (createMode === "TRIPLE") {
+                        if (tripleViewState > 0) print_up_arrow(72, 123);
+                        if (tripleViewState < 2) print_down_arrow(80, 123);
+                    }
+                    break;
+
+                case STATES.QR_STD: renderQR('STANDARD'); break;
+                case STATES.QR_CMPCT: renderQR('COMPACT'); break;
+
+                case STATES.SD_WRITE:
+                    drawtext(1, 10, "SELECT SLOT TO WRITE", "white");
+                    drawSDMenuUI();
+                    if (ioStatusMsg === "SUCCESS") drawtext(70, 20 + ptrs.sd * 10, "WRITE SUCCESS", "green");
+                    else if (ioStatusMsg === "ERROR") drawtext(70, 20 + ptrs.sd * 10, "WRITE ERROR ", "red");
+                    grid_menuwr();
+                    break;
+
+                case STATES.SD_READ:
+                    drawtext(1, 10, "SELECT SLOT TO READ", "white");
+                    drawSDMenuUI();
+                    if (ioStatusMsg === "NO SEED") drawtext(70, 20 + ptrs.sd * 10, "NO SEED", "red");
+                    else if (ioStatusMsg === "ERROR") drawtext(70, 20 + ptrs.sd * 10, "SD ERROR ", "red");
+                    grid_menuwr(); 
+                    break;
+
+                case STATES.SD_ERASE:
+                    drawtext(1, 10, "SELECT SLOT TO ERASE", "white");
+                    drawSDMenuUI();
+                    if (ioStatusMsg === "SUCCESS") drawtext(70, 20 + ptrs.sd * 10, "ERASE SUCCESS", "green");
+                    else if (ioStatusMsg === "ERROR") drawtext(70, 20 + ptrs.sd * 10, "ERASE ERROR ", "red");
+                    grid_menuwr(); 
+                    break;
+            }
+        }
+
+        function drawSDMenuUI() {
+            for (let i = 0; i < 8; i++) {
+                let slot_num = i + 1 + (sdPage * 8);
+                let color = (i === ptrs.sd) ? "orange" : "white";
+                drawtext(3, 20 + i * 10, `SLOT${slot_num}`, color);
+                drawtext(48, 20 + i * 10, getSDPreview(slot_num - 1), "cyan");
+            }
+        }
+
+        // --- Mouse Auto-Repeat Logic ---
+        let holdTimeout;
+        let holdInterval;
+
+        function startInput(btn) {
+            if (!isPoweredOn) return;
+            
+            handleInput(btn); // Fire once immediately on click
+            
+            // Wait 400ms before triggering continuous repeat
+            holdTimeout = setTimeout(() => {
+                holdInterval = setInterval(() => {
+                    handleInput(btn); // Fire every 80ms while held
+                }, 80);
+            }, 400);
+        }
+
+        function stopInput() {
+            // Stop timers when mouse is released or leaves the button
+            clearTimeout(holdTimeout);
+            clearInterval(holdInterval);
+        }
+
+        async function handleInput(btn) {
+            if (!isPoweredOn) return;
+            blinkLed(); 
+  
+
+            if (machineState === STATES.INIT) {
+                machineState = STATES.MAIN;
+            }
+            else if (machineState === STATES.MAIN) {
+                if (btn === 'DOWN' && ptrs.main < menu_main.length - 1) ptrs.main++;
+                if (btn === 'UP' && ptrs.main > 0) ptrs.main--;
+                if (btn === 'OK') {
+                    if (ptrs.main === 0) machineState = STATES.CREATE;
+                    else if (ptrs.main === 1) { machineState = STATES.SEL_INPUT; ptrs.input = 0; }
+                    else if (ptrs.main === 2) { machineState = STATES.CHILD_CONFIG; bip85Cursor = 0; bip85Size = 0; bip85Index = 0; }
+                    else if (ptrs.main === 7) { machineState = STATES.SD_ERASE; ptrs.sd = 0; sdPage = 0; ioStatusMsg = ""; lastIoSlot = -1; }
+                }
+            } 
+            else if (machineState === STATES.CHILD_CONFIG) {
+                if (btn === 'LEFT') bip85Cursor = 0;
+                if (btn === 'RIGHT') bip85Cursor = 1;
+                if (btn === 'UP') {
+                    if (bip85Cursor === 0) bip85Size = 0;
+                    else bip85Index++;
+                }
+                if (btn === 'DOWN') {
+                    if (bip85Cursor === 0) bip85Size = 1;
+                    else if (bip85Index > 0) bip85Index--;
+                }
+                if (btn === 'BACK') machineState = STATES.MAIN;
+                if (btn === 'OK') {
+                    machineState = STATES.SEL_INPUT;
+                    createMode = "BIP85";
+                }
+            }
+            else if (machineState === STATES.CREATE) {
+                if (btn === 'DOWN' && ptrs.create < menu_create.length - 1) ptrs.create++;
+                if (btn === 'UP' && ptrs.create > 0) ptrs.create--;
+                if (btn === 'BACK') machineState = STATES.MAIN;
+                if (btn === 'OK') {
+                    if (ptrs.create === 0) { createMode = "COINS"; machineState = STATES.SIZE; } 
+                    else if (ptrs.create === 1) { machineState = STATES.DICE_MODE; ptrs.dice = 0; } 
+                    else if (ptrs.create === 2) { createMode = "KEYBOARD"; machineState = STATES.SIZE; }
+                    else if (ptrs.create === 3) { createMode = "CARDS"; machineState = STATES.SIZE; }
+                    else if (ptrs.create === 4) { createMode = "TMR"; machineState = STATES.SIZE; }
+                    else if (ptrs.create === 5) { createMode = "TRIPLE"; targetBits = 256; machineState = STATES.SEL_INPUT; ptrs.input = 0; }
+                }
+            }
+            else if (machineState === STATES.DICE_MODE) {
+                if (btn === 'DOWN' && ptrs.dice < menu_dice.length - 1) ptrs.dice++;
+                if (btn === 'UP' && ptrs.dice > 0) ptrs.dice--;
+                if (btn === 'BACK') machineState = STATES.CREATE;
+                if (btn === 'OK') {
+                    if (ptrs.dice === 0) { createMode = "DICE_RAW"; machineState = STATES.SIZE; }
+                    else if (ptrs.dice === 1) { machineState = STATES.HASH_MODE; ptrs.hash = 0; }
+                }
+            }
+            else if (machineState === STATES.HASH_MODE) {
+                if (btn === 'DOWN' && ptrs.hash < menu_hash.length - 1) ptrs.hash++;
+                if (btn === 'UP' && ptrs.hash > 0) ptrs.hash--;
+                if (btn === 'BACK') machineState = STATES.DICE_MODE;
+                if (btn === 'OK') { createMode = "DICE_HASH"; machineState = STATES.SIZE; }
+            }
+            else if (machineState === STATES.SEL_INPUT) {
+                if (btn === 'DOWN' && ptrs.input < menu_input.length - 1) ptrs.input++;
+                if (btn === 'UP' && ptrs.input > 0) ptrs.input--;
+                if (btn === 'BACK') {
+                    if (createMode === "BIP85") machineState = STATES.CHILD_CONFIG;
+                    else machineState = STATES.MAIN;
+                }
+                if (btn === 'OK') {
+                    if (ptrs.input === 0) { 
+                        machineState = (createMode === "TRIPLE" || createMode === "BIP85") ? STATES.WRITE_WORD : STATES.SIZE; 
+                        kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
+                    }
+                    else if (ptrs.input === 1) { machineState = STATES.SD_READ; ptrs.sd = 0; sdPage = 0; ioStatusMsg = ""; lastIoSlot = -1; }
+                }
+            }
+            else if (machineState === STATES.SIZE) {
+                if (btn === 'DOWN' && ptrs.size < menu_size.length - 1) ptrs.size++;
+                if (btn === 'UP' && ptrs.size > 0) ptrs.size--;
+                if (btn === 'BACK') {
+                    if (createMode === "DICE_RAW") machineState = STATES.DICE_MODE;
+                    else if (createMode === "DICE_HASH") machineState = STATES.HASH_MODE;
+                    else if (createMode === "KEYBOARD") machineState = STATES.CREATE;
+                    else machineState = STATES.CREATE;
+                }
+                if (btn === 'OK') {
+                    targetBits = (ptrs.size === 0) ? 128 : 256;
+                    entropyBits = "";
+                    lastInputLen = 0;
+                    if (createMode === "COINS") machineState = STATES.COINS_INPUT;
+                    else if (createMode === "DICE_RAW") machineState = STATES.DICE_INPUT;
+                    else if (createMode === "DICE_HASH") { 
+                        machineState = STATES.DICE_HASH_INPUT; 
+                        diceHashStr = ""; ptrs.diceHashChar = 0; 
+                    }
+                    else if (createMode === "CARDS") {
+                        machineState = STATES.CARD_INPUT;
+                        cardRankPtr = 0; cardSuitPtr = 0; cardFieldPtr = 0;
+                        cardHistoryStart = []; cardHistoryLen = [];
+                    }
+                    else if (createMode === "TMR") {
+                        machineState = STATES.TMR_INPUT;
+                        tmrHexList = [];
+                    }
+                    else if (createMode === "KEYBOARD") {
+                        machineState = STATES.WRITE_WORD;
+                        kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
+                    }
+                }
+            }
+            else if (machineState === STATES.WRITE_WORD) {
+                if (btn === 'LEFT') kbNavigate(-1);
+                else if (btn === 'RIGHT') kbNavigate(1);
+                else if (btn === 'UP') kbNavigateVertical(-1);
+                else if (btn === 'DOWN') kbNavigateVertical(1);
+                else if (btn === 'BACK') {
+                    if (kbWord.length > 0) {
+                        kbWord = kbWord.slice(0, -1);
+                        kbUpdateValidLetters();
+                        kbCharIdx = 0;
+                    } else if (kbWordIdx > 1) {
+                        kbWordIdx--;
+                        entropyBits = entropyBits.slice(0, -11);
+                        kbWord = "";
+                        kbUpdateValidLetters();
+                        kbCharIdx = 0;
+                    } else {
+                        machineState = STATES.SEL_INPUT;
+                    }
+                }
+                else if (btn === 'OK') {
+                    if (kbCharIdx < 26 && kbValidMask[kbCharIdx]) {
+                        kbWord += String.fromCharCode(65 + kbCharIdx);
+                        kbUpdateValidLetters();
+                        if (kbValidMask[26]) kbCharIdx = 26;
+                        else kbCharIdx = kbValidMask.findIndex(v => v);
+                    } else if (kbCharIdx === 26 && kbFoundWord !== "") {
+                        let wordIndex = wordlist.indexOf(kbFoundWord.toLowerCase());
+                        entropyBits += wordIndex.toString(2).padStart(11, '0');
+                        kbWord = "";
+                        kbUpdateValidLetters();
+                        kbCharIdx = 0;
+                        
+                        let targetWords = targetBits === 128 ? 12 : 24;
+                        if (kbWordIdx === targetWords) {
+                            drawtext(50, 60, "COMPUTING...", "yellow");
+                            let reqEntropyBytes = targetBits / 8;
+                            let eBytes = new Uint8Array(reqEntropyBytes);
+                            for(let i=0; i<reqEntropyBytes; i++) eBytes[i] = parseInt(entropyBits.substring(i*8, (i+1)*8), 2);
+                            let calcHash = await calculateSHA256(eBytes);
+                            let chkLen = targetBits === 128 ? 4 : 8;
+                            let expectedChk = calcHash[0].toString(2).padStart(8, '0').substring(0, chkLen);
+                            let userChk = entropyBits.substring(targetBits, targetBits + chkLen);
+                            
+                            if (expectedChk === userChk) {
+                                await generateFinalSeed(); 
+                                if (createMode === "TRIPLE") machineState = STATES.PROCESS_TRIPLE;
+                                else machineState = STATES.SHOW_SEED;
+                            } else {
+                                machineState = STATES.WORD_LIST_ERROR;
+                            }
+                        } else {
+                            kbWordIdx++;
+                        }
+                    }
+                }
+            }
+            else if (machineState === STATES.WORD_LIST_ERROR) {
+                entropyBits = "";
+                kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
+                machineState = STATES.WRITE_WORD;
+            }
+            else if (machineState === STATES.COINS_INPUT) {
+                if (btn === 'LEFT') { appendEntropyBit("0"); } 
+                else if (btn === 'DOWN') { appendEntropyBit("1"); } 
+                else if (btn === 'BACK') { deleteLastEntropyBit(); }
+
+                if (entropyBits.length >= targetBits) {
+                    drawtext(50, 60, "COMPUTING...", "yellow");
+                    await generateFinalSeed();
+                    machineState = STATES.CHECKSUM_DETAILS;
+                }
+            }
+            else if (machineState === STATES.DICE_INPUT) {
+                if (btn === 'BACK') appendEntropyBit("01"); 
+                else if (btn === 'UP') appendEntropyBit("10"); 
+                else if (btn === 'OK') appendEntropyBit("11"); 
+                else if (btn === 'LEFT') appendEntropyBit("0"); 
+                else if (btn === 'DOWN') appendEntropyBit("1"); 
+                else if (btn === 'RIGHT') appendEntropyBit("00"); 
+
+                if (entropyBits.length >= targetBits) {
+                    drawtext(50, 60, "COMPUTING...", "yellow");
+                    await generateFinalSeed();
+                    machineState = STATES.CHECKSUM_DETAILS;
+                }
+            }
+            else if (machineState === STATES.DICE_HASH_INPUT) {
+                let target_rolls = (targetBits === 128) ? 50 : 99;
+                let len = diceHashStr.length;
+                if (btn === 'LEFT') { ptrs.diceHashChar = Math.max(0, ptrs.diceHashChar - 1); }
+                else if (btn === 'RIGHT') { ptrs.diceHashChar = Math.min(6, ptrs.diceHashChar + 1); }
+                else if (btn === 'BACK') { if (len > 0) diceHashStr = diceHashStr.slice(0, -1); }
+                else if (btn === 'OK') {
+                    if (ptrs.diceHashChar < 6) {
+                        if (len < 200 * 3) {
+                            diceHashStr += (ptrs.diceHashChar + 1).toString();
+                        }
+                    } else if (ptrs.diceHashChar === 6 && len >= target_rolls) {
+                        drawtext(50, 60, "COMPUTING...", "yellow");
+                        let hash_str = diceHashStr;
+                        if (ptrs.hash === 1) hash_str = hash_str.replace(/6/g, '0');
+                        
+                        let encoder = new TextEncoder();
+                        let data = encoder.encode(hash_str);
+                        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                        const hashArray = new Uint8Array(hashBuffer);
+                        
+                        for(let i=0; i<32; i++) finalByteArray[i] = hashArray[i];
+                        
+                        entropyBits = "";
+                        let bytesLen = targetBits / 8;
+                        for (let i = 0; i < bytesLen; i++) {
+                            entropyBits += finalByteArray[i].toString(2).padStart(8, '0');
+                        }
+                        await generateFinalSeed(); 
+                        machineState = STATES.CHECKSUM_DETAILS;
+                    }
+                }
+            }
+            else if (machineState === STATES.CARD_INPUT) {
+                if (btn === 'LEFT') cardFieldPtr = 0;
+                else if (btn === 'RIGHT') cardFieldPtr = 1;
+                else if (btn === 'UP') {
+                    if (cardFieldPtr === 0) cardRankPtr = (cardRankPtr + 1) % 13;
+                    else cardSuitPtr = (cardSuitPtr + 1) % 4;
+                }
+                else if (btn === 'DOWN') {
+                    if (cardFieldPtr === 0) cardRankPtr = (cardRankPtr - 1 + 13) % 13;
+                    else cardSuitPtr = (cardSuitPtr - 1 + 4) % 4;
+                }
+                else if (btn === 'OK') {
+                    let bits = card_entropy_map[cardSuitPtr * 13 + cardRankPtr];
+                    if (entropyBits.length < targetBits) {
+                        cardHistoryStart.push(entropyBits.length);
+                        cardHistoryLen.push(bits.length);
+                        appendEntropyBit(bits);
+                    }
+                }
+                else if (btn === 'BACK') {
+                    if (cardHistoryStart.length > 0) {
+                        let start = cardHistoryStart.pop();
+                        lastInputLen = cardHistoryLen.pop();
+                        deleteLastEntropyBit();
+                    } else {
+                        machineState = STATES.SIZE; 
+                    }
+                }
+
+                if (entropyBits.length >= targetBits) {
+                    drawtext(50, 60, "COMPUTING...", "yellow");
+                    await generateFinalSeed();
+                    machineState = STATES.CHECKSUM_DETAILS;
+                }
+            }
+            else if (machineState === STATES.TMR_INPUT) {
+                if (btn === 'OK') {
+                    let rnd16 = Math.floor(Math.random() * 65536);
+                    tmrHexList.push(rnd16.toString(16).padStart(4, '0').toUpperCase());
+                    let bits = rnd16.toString(2).padStart(16, '0');
+                    appendEntropyBit(bits);
+                    
+                    if (entropyBits.length >= targetBits) {
+                        if (createMode === "TRIPLE") {
+                            await processTripleMnemonic();
+                            machineState = STATES.SHOW_TRIPLE_CHKSUM_12;
+                        } else {
+                            drawtext(50, 60, "COMPUTING...", "yellow");
+                            await generateFinalSeed();
+                            machineState = STATES.CHECKSUM_DETAILS;
+                        }
+                    }
+                }
+                else if (btn === 'BACK') {
+                    if (createMode === "TRIPLE") machineState = STATES.SEL_INPUT;
+                    else machineState = STATES.SIZE;
+                }
+            }
+            else if (machineState === STATES.PROCESS_TRIPLE) {
+                await processTripleMnemonic();
+                machineState = STATES.SHOW_TRIPLE_CHKSUM_12;
+            }
+            else if (machineState === STATES.SHOW_TRIPLE_CHKSUM_12) {
+                if (btn === 'OK') machineState = STATES.SHOW_TRIPLE_CHKSUM_24;
+            }
+            else if (machineState === STATES.SHOW_TRIPLE_CHKSUM_24) {
+                if (btn === 'OK') {
+                    tripleViewState = 0;
+                    machineState = STATES.SHOW_SEED;
+                }
+            }
+            else if (machineState === STATES.CHECKSUM_DETAILS) {
+                if (btn === 'OK') machineState = STATES.SHOW_SEED;
+            }
+            else if (machineState === STATES.SHOW_SEED) {
+                if (createMode === "TRIPLE") {
+                    if (btn === 'UP' && tripleViewState > 0) tripleViewState--;
+                    if (btn === 'DOWN' && tripleViewState < 2) tripleViewState++;
+                }
+                if (btn === 'LEFT') { machineState = STATES.SD_WRITE; ioStatusMsg = ""; ptrs.sd = 0; lastIoSlot = -1; }
+                if (btn === 'OK') machineState = STATES.QR_STD;
+                if (btn === 'RIGHT') machineState = STATES.QR_CMPCT; 
+            }
+            else if (machineState === STATES.QR_STD || machineState === STATES.QR_CMPCT) {
+                if (btn === 'BACK' || btn === 'LEFT') machineState = STATES.SHOW_SEED;
+            }
+            else if (machineState === STATES.SD_WRITE || machineState === STATES.SD_READ || machineState === STATES.SD_ERASE) {
+                if (btn === 'BACK') {
+                    if (machineState === STATES.SD_WRITE) machineState = STATES.SHOW_SEED;
+                    else if (machineState === STATES.SD_READ) machineState = STATES.SEL_INPUT;
+                    else if (machineState === STATES.SD_ERASE) machineState = STATES.MAIN;
+                }
+                if (btn === 'UP' && ptrs.sd > 0) { ptrs.sd--; ioStatusMsg = ""; }
+                if (btn === 'DOWN' && ptrs.sd < 7) { ptrs.sd++; ioStatusMsg = ""; }
+                
+                if (btn === 'LEFT' && sdPage > 0) { sdPage--; ioStatusMsg = ""; }
+                if (btn === 'RIGHT') { sdPage++; ioStatusMsg = ""; } 
+                
+                if (btn === 'OK') {
+                    let absolute_slot = ptrs.sd + (sdPage * 8);
+                    lastIoSlot = absolute_slot;
+                    
+                    if (machineState === STATES.SD_WRITE) {
+                        if (writeToVirtualSD(absolute_slot)) ioStatusMsg = "SUCCESS";
+                        else ioStatusMsg = "ERROR";
+                    } else if (machineState === STATES.SD_READ) {
+                        let res = await loadFromVirtualSD(absolute_slot);
+                        if (res === 0) {
+                            if (createMode === "BIP85") {
+                                machineState = STATES.PROCESS_BIP85;
+                                drawtext(50, 50, "COMPUTING CHILD", "white");
+                                drawtext(50, 65, "MNEMONIC...", "white");
+                                await processBIP85();
+                                machineState = STATES.SHOW_SEED;
+                            } else {
+                                machineState = STATES.SHOW_SEED;
+                            }
+                        }
+                        else if (res === 2) ioStatusMsg = "NO SEED";
+                        else ioStatusMsg = "ERROR";
+                    } else if (machineState === STATES.SD_ERASE) {
+                        if (!sdReady) {
+                            ioStatusMsg = "ERROR";
+                        } else {
+                            virtualSd[absolute_slot] = null;
+                            localStorage.setItem('seedmate_sd', JSON.stringify(virtualSd));
+                            ioStatusMsg = "SUCCESS";
+                        }
+                    }
+                }
+            }
+            render();
+        }
+
+        // Map physical keyboard keys to emulator buttons
+        const keyMap = {
+            'ArrowUp': 'UP',
+            'ArrowDown': 'DOWN',
+            'ArrowLeft': 'LEFT',
+            'ArrowRight': 'RIGHT',
+            'Enter': 'OK',
+            'Escape': 'BACK',
+            'Backspace': 'BACK',
+            // Numpad / Right side numbers mapping
+            '4': 'BACK',
+            '5': 'UP',
+            '6': 'OK',
+            '1': 'LEFT',
+            '2': 'DOWN',
+            '3': 'RIGHT'
+        };
+
+        // Trigger logical input and add visual pressed state
+        window.addEventListener('keydown', (e) => {
+            if (keyMap[e.key]) {
+                e.preventDefault();
+                
+                // Add visual push effect strictly once per physical press
+                let btnElement = document.getElementById('btn-' + keyMap[e.key].toLowerCase());
+                if (btnElement && !e.repeat) {
+                    btnElement.classList.add('pressed');
+                }
+
+                // Logical input (fires continuously if OS auto-repeat is active)
+                handleInput(keyMap[e.key]);
+            }
+        });
+
+        // Remove visual pressed state when the physical key is released
+        window.addEventListener('keyup', (e) => {
+            if (keyMap[e.key]) {
+                e.preventDefault();
+                
+                let btnElement = document.getElementById('btn-' + keyMap[e.key].toLowerCase());
+                if (btnElement) {
+                    btnElement.classList.remove('pressed');
+                }
+            }
+        });
+
+        fetch('https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/english.txt')
+            .then(res => res.text())
+            .then(text => {
+                wordlist = text.split('\n').map(w => w.trim()).filter(w => w.length > 0);
+                localStorage.setItem('seedmate_bip39', wordlist.join(','));
+                render();
+            }).catch(() => {
+                wordlist = (localStorage.getItem('seedmate_bip39') || "").split(',');
+                render();
+            });
+    </script>
+</body>
+</html>
