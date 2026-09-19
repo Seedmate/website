@@ -294,6 +294,7 @@
 
         function clearDeviceRAM() {
             entropyBits = ""; 
+            excessBits = ""; 
             targetBits = 128; 
             lastInputLen = 0; 
             currentSeedWords = [];
@@ -529,6 +530,7 @@
         }
 
         let entropyBits = ""; 
+        let excessBits = ""; 
         let targetBits = 128; 
         let lastInputLen = 0; 
         let currentSeedWords = [];
@@ -613,58 +615,83 @@
             }
         }
 
+        // Process triple mnemonic generation matching the exact logic from main_2.c
         async function processTripleMnemonic() {
-            drawtext(50, 60, "COMPUTING TRIPLE", "white");
-            drawtext(50, 75, "MNEMONIC...", "white");
-            
+            // 1. Fix Word 12 (first 128 bits checksum using first 4 bits of SHA256 hash)
             const firstHalf = new Uint8Array(16);
             for (let i = 0; i < 16; i++) {
                 firstHalf[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
                 finalByteArray[i] = firstHalf[i];
             }
             
-            let hash1 = await calculateSHA256(firstHalf);
-            let firstChecksum = hash1[0].toString(2).padStart(8, '0').substring(0, 4);
-            let currentEntropy = entropyBits.substring(0, 128) + firstChecksum + entropyBits.substring(132, 256);
+            let hash12First = await calculateSHA256(firstHalf);
+            let firstChecksum = hash12First[0].toString(2).padStart(8, '0').substring(0, 4);
+
+            for (let b = 0; b < 4; b++) {
+                let bit = parseInt(firstChecksum[b]);
+                // Set the 4-bit checksum bits in the entropy stream at position 128..131
+                let bitIdx = 128 + b;
+                let byteIdx = Math.floor(bitIdx / 8);
+                let bitPos = 7 - (bitIdx % 8);
+                if (bit) entropyBits_setBit(byteIdx, bitPos, 1); // helper or direct string manipulation below
+            }
+            // Using string representation for consistency with the rest of simulator.html:
+            let baseEntropy128 = entropyBits.substring(0, 128);
+            let variableEntropy124 = entropyBits.substring(132, 256);
             
-            let iters = 0;
+            entropyBits = baseEntropy128 + firstChecksum + variableEntropy124;
+
+            // 2. Bruteforce the second half entropy to satisfy both word 24 and the second 12-word seed checksums
             while (true) {
                 let fullEntropyBytes = new Uint8Array(32);
                 for (let i = 0; i < 32; i++) {
-                    fullEntropyBytes[i] = parseInt(currentEntropy.substring(i * 8, (i + 1) * 8), 2);
+                    fullEntropyBytes[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
                 }
                 
                 let hash24 = await calculateSHA256(fullEntropyBytes);
                 let masterChecksum = hash24[0].toString(2).padStart(8, '0');
-                
-                let secondSeedBits = currentEntropy.substring(132, 256) + masterChecksum.substring(0, 4);
-                let secondSeedBytes = new Uint8Array(16);
-                for (let i = 0; i < 16; i++) {
-                    secondSeedBytes[i] = parseInt(secondSeedBits.substring(i * 8, (i + 1) * 8), 2);
+
+                // Set master checksum (8 bits) at the end (bits 256 to 263)
+                entropyBits = entropyBits.substring(0, 256) + masterChecksum;
+
+                // Extract second seed bits (128 bits of entropy)
+                let secondHalfEntropy = new Uint8Array(16);
+                for (let b = 0; b < 128; b++) {
+                    let bit = parseInt(entropyBits[132 + b]);
+                    if (bit) secondHalfEntropy[Math.floor(b / 8)] |= (1 << (7 - (b % 8)));
                 }
-                
-                let hash12_sec = await calculateSHA256(secondSeedBytes);
-                let secondChecksum = hash12_sec[0].toString(2).padStart(8, '0').substring(0, 4);
-                
-                if (masterChecksum.substring(4, 8) === secondChecksum) {
-                    entropyBits = currentEntropy + masterChecksum;
-                    break;
+
+                let hash12Sec = await calculateSHA256(secondHalfEntropy);
+                let secondChecksum = hash12Sec[0].toString(2).padStart(8, '0').substring(0, 4);
+
+                // Check if the first 4 bits of master checksum match the second seed's checksum
+                let match = true;
+                for (let b = 0; b < 4; b++) {
+                    let bitArray = parseInt(entropyBits[260 + b]);
+                    let bitHash = parseInt(secondChecksum[b]);
+                    if (bitArray !== bitHash) {
+                        match = false;
+                        break;
+                    }
                 }
-                
-                let secondHalfBin = currentEntropy.substring(132, 256);
-                let secondHalfBigInt = BigInt('0b' + secondHalfBin) + 1n;
-                let newSecondHalfBin = secondHalfBigInt.toString(2).padStart(124, '0');
-                if (newSecondHalfBin.length > 124) newSecondHalfBin = newSecondHalfBin.substring(newSecondHalfBin.length - 124);
-                currentEntropy = currentEntropy.substring(0, 132) + newSecondHalfBin;
-                
-                iters++;
-                if (iters > 3000) break;
+
+                if (match) break;
+
+                // Increment the 256-bit entropy starting backwards (from bit 255 down to 132)
+                let currentSecondHalfBin = entropyBits.substring(132, 256);
+                let bigIntValue = BigInt('0b' + currentSecondHalfBin) + 1n;
+                let newSecondHalfBin = bigIntValue.toString(2).padStart(124, '0');
+                if (newSecondHalfBin.length > 124) {
+                    newSecondHalfBin = newSecondHalfBin.substring(newSecondHalfBin.length - 124);
+                }
+                entropyBits = entropyBits.substring(0, 132) + newSecondHalfBin + entropyBits.substring(256, 264);
             }
-            
+
+            // Populate final byte array with the validated 256-bit entropy
             for (let i = 0; i < 32; i++) {
                 finalByteArray[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
             }
-            
+
             const totalWords = 24;
             currentSeedWords = [];
             for (let i = 0; i < totalWords; i++) {
@@ -927,10 +954,8 @@
             SD_WRITE: 8, SEL_INPUT: 9, SD_READ: 10, SD_ERASE: 11,
             DICE_MODE: 12, HASH_MODE: 13, DICE_INPUT: 14, DICE_HASH_INPUT: 15, CARD_INPUT: 16, TMR_INPUT: 17,
             PROCESS_TRIPLE: 18, SHOW_TRIPLE_CHKSUM_12: 19, SHOW_TRIPLE_CHKSUM_24: 20,
-            CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24,
-            EXCESS_BITS: 25 // Added excess bits state
+            CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24
         };
-        let excessBits = ""; // Global variable to store leftover bits when entropy exceeds targetBits
         let machineState = STATES.INIT;
         let ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0 };
         let sd_page = 0;
@@ -1048,20 +1073,6 @@
                     renderEntropyBuilding();
                     grid_keyboard();
                     break;
-                    
-                case STATES.EXCESS_BITS:
-                    drawtext(1, 10, "EXCESS BITS:", "white");
-                    // Render excess bits in cyan, wrapping or displaying them clearly
-                    let exLen = excessBits.length;
-                    for (let i = 0; i < exLen; i++) {
-                        let rx = (i % 25) * 6;
-                        let ry = 25 + Math.floor(i / 25) * 10;
-                        drawtext(1 + rx, ry, excessBits[i], "cyan");
-                    }
-                    drawtext(1, 80, `Total collected: ${targetBits + exLen} bits`, "yellow");
-                    drawtext(1, 95, `Using exact: ${targetBits} bits`, "green");
-                    grid_OK_only();
-                    break;
 
                 case STATES.TMR_INPUT:
                     drawtext(1, 5, "STOP timer to set entropy", "white");
@@ -1122,9 +1133,12 @@
                     let bStr12 = entropyBits.substring(121, 128);
                     let cStr12 = entropyBits.substring(128, 132);
                     let dec12 = parseInt(bStr12 + cStr12, 2);
-                    drawtext(1, 25, bStr12, "orange"); drawtext(1 + 7*6, 25, cStr12, "cyan");
-                    drawtext(1, 40, "decimal: ", "white"); drawtext(55, 40, dec12.toString().padStart(4, '0'), "yellow");
-                    drawtext(1, 55, "word: ", "white"); drawtext(37, 55, wordlist[dec12], "green");
+                    drawtext(1, 25, bStr12, "orange"); 
+                    drawtext(1 + (7 * 6), 25, cStr12, "cyan");
+                    drawtext(1, 40, "decimal: ", "white"); 
+                    drawtext(55, 40, dec12.toString().padStart(4, '0'), "yellow");
+                    drawtext(1, 55, "word: ", "white"); 
+                    drawtext(37, 55, wordlist[dec12], "green");
                     grid_OK_only();
                     break;
 
@@ -1133,9 +1147,12 @@
                     let bStr24 = entropyBits.substring(253, 256);
                     let cStr24 = entropyBits.substring(256, 264);
                     let dec24 = parseInt(bStr24 + cStr24, 2);
-                    drawtext(1, 25, bStr24, "orange"); drawtext(1 + 3*6, 25, cStr24, "cyan");
-                    drawtext(1, 40, "decimal: ", "white"); drawtext(55, 40, dec24.toString().padStart(4, '0'), "yellow");
-                    drawtext(1, 55, "word: ", "white"); drawtext(37, 55, wordlist[dec24], "green");
+                    drawtext(1, 25, bStr24, "orange"); 
+                    drawtext(1 + (3 * 6), 25, cStr24, "cyan");
+                    drawtext(1, 40, "decimal: ", "white"); 
+                    drawtext(55, 40, dec24.toString().padStart(4, '0'), "yellow");
+                    drawtext(1, 55, "word: ", "white"); 
+                    drawtext(37, 55, wordlist[dec24], "green");
                     grid_OK_only();
                     break;
 
@@ -1180,14 +1197,28 @@
                         drawtext(1, 75, "word:", "white");
                         drawtext(37, 75, checksumDetails.word.toUpperCase(), "green");
                     } else {
-                        drawtext(1, 5, "Checksum word:", "white");
+                        // Render excess bits matching main.c behavior: show last entropy bits in orange and excess bits in red
+                        let y_top_offset = 2;
+                        
+                        if (excessBits && excessBits.length > 0) {
+                            drawtext(1, y_top_offset, "Excess bits (discarded):", "white");
+                            y_top_offset += 10;
+                            
+                            let b_len = targetBits === 128 ? 7 : 3;
+                            drawtext(1, y_top_offset, checksumDetails.b_str, "orange");
+                            drawtext(1 + (b_len * 6), y_top_offset, excessBits, "red");
+                            y_top_offset += 15;
+                        }
+
+                        // Render checksum word details below
+                        drawtext(1, y_top_offset, "Checksum word:", "white");
                         let b_len = targetBits === 128 ? 7 : 3;
-                        drawtext(1, 15, checksumDetails.b_str, "orange");
-                        drawtext(6 + (b_len * 6), 15, checksumDetails.c_str, "cyan");
-                        drawtext(1, 25, "decimal:", "white");
-                        drawtext(55, 25, checksumDetails.decimal.toString().padStart(4, '0'), "yellow");
-                        drawtext(1, 35, "word:", "white");
-                        drawtext(37, 35, checksumDetails.word.toUpperCase(), "green");
+                        drawtext(1, y_top_offset + 10, checksumDetails.b_str, "orange");
+                        drawtext(6 + (b_len * 6), y_top_offset + 10, checksumDetails.c_str, "cyan");
+                        drawtext(1, y_top_offset + 20, "decimal:", "white");
+                        drawtext(55, y_top_offset + 20, checksumDetails.decimal.toString().padStart(4, '0'), "yellow");
+                        drawtext(1, y_top_offset + 30, "word:", "white");
+                        drawtext(37, y_top_offset + 30, checksumDetails.word.toUpperCase(), "green");
                     }
                     grid_OK_only();
                     break;
@@ -1210,8 +1241,12 @@
                         let dispNum = i + 1 + startWordIdx;
                         let numStr = dispNum.toString();
                         
+                        // Highlight words 12, 23, and 24 in green for Triple Mnemonic mode matching main.c
+                        let isTripleHighlight = (createMode === "TRIPLE" && tripleViewState === 0 && (dispNum === 12 || dispNum === 23 || dispNum === 24));
+                        let wordColor = (isLast || isTripleHighlight) ? "#3FBF7F" : "white";
+
                         drawtext(x_index, y_index, numStr, "white");
-                        drawtext(x_index + 15, y_index, displayWords[i].word, isLast ? "#3FBF7F" : "white");
+                        drawtext(x_index + 15, y_index, displayWords[i].word, wordColor);
                         
                         y_index += 9;
                         if (y_index > 100) { x_index = 70; y_index = 0; }
@@ -1388,6 +1423,7 @@
                 if (btn === 'OK') {
                     targetBits = (ptrs.size === 0) ? 128 : 256;
                     entropyBits = "";
+                    excessBits = "";
                     lastInputLen = 0;
                     if (createMode === "COINS") machineState = STATES.COINS_INPUT;
                     else if (createMode === "DICE_RAW") machineState = STATES.DICE_INPUT;
@@ -1488,22 +1524,25 @@
                                 kbCharIdx = 0;
                                 kbWordIdx++;
                             } else {
-                                // Strict validation for LOAD and other operations
-                                let reqEntropyBytes = targetBits / 8;
-                                let eBytes = new Uint8Array(reqEntropyBytes);
-                                for(let i = 0; i < reqEntropyBytes; i++) {
-                                    eBytes[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
-                                }
-                                let calcHash = await calculateSHA256(eBytes);
-                                let expectedChk = calcHash[0].toString(2).padStart(8, '0').substring(0, checksumLen);
-                                let userChk = entropyBits.substring(targetBits, targetBits + checksumLen);
-                                
-                                if (expectedChk === userChk) {
-                                    await generateFinalSeed(); 
-                                    if (createMode === "TRIPLE") machineState = STATES.PROCESS_TRIPLE;
-                                    else machineState = STATES.SHOW_SEED;
+                                if (createMode === "TRIPLE") {
+                                    await processTripleMnemonic();
+                                    machineState = STATES.SHOW_TRIPLE_CHKSUM_12;
                                 } else {
-                                    machineState = STATES.WORD_LIST_ERROR;
+                                    let reqEntropyBytes = targetBits / 8;
+                                    let eBytes = new Uint8Array(reqEntropyBytes);
+                                    for(let i = 0; i < reqEntropyBytes; i++) {
+                                        eBytes[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
+                                    }
+                                    let calcHash = await calculateSHA256(eBytes);
+                                    let expectedChk = calcHash[0].toString(2).padStart(8, '0').substring(0, checksumLen);
+                                    let userChk = entropyBits.substring(targetBits, targetBits + checksumLen);
+                                    
+                                    if (expectedChk === userChk) {
+                                        await generateFinalSeed(); 
+                                        machineState = STATES.SHOW_SEED;
+                                    } else {
+                                        machineState = STATES.WORD_LIST_ERROR;
+                                    }
                                 }
                             }
                         }
@@ -1522,7 +1561,10 @@
 
                 if (entropyBits.length >= targetBits) {
                     drawtext(50, 60, "COMPUTING...", "yellow");
+                    excessBits = entropyBits.substring(targetBits);
+                    entropyBits = entropyBits.substring(0, targetBits);
                     await generateFinalSeed();
+                    lastUserWordDetails = {}; // Clear keyboard flag so normal details show
                     machineState = STATES.CHECKSUM_DETAILS;
                 }
             }
@@ -1536,7 +1578,10 @@
 
                 if (entropyBits.length >= targetBits) {
                     drawtext(50, 60, "COMPUTING...", "yellow");
+                    excessBits = entropyBits.substring(targetBits);
+                    entropyBits = entropyBits.substring(0, targetBits);
                     await generateFinalSeed();
+                    lastUserWordDetails = {};
                     machineState = STATES.CHECKSUM_DETAILS;
                 }
             }
@@ -1569,6 +1614,7 @@
                             entropyBits += finalByteArray[i].toString(2).padStart(8, '0');
                         }
                         await generateFinalSeed(); 
+                        lastUserWordDetails = {};
                         machineState = STATES.CHECKSUM_DETAILS;
                     }
                 }
@@ -1611,12 +1657,8 @@
                     entropyBits = entropyBits.substring(0, targetBits);
                     
                     await generateFinalSeed();
-                    
-                    if (excessBits.length > 0) {
-                        machineState = STATES.EXCESS_BITS;
-                    } else {
-                        machineState = STATES.CHECKSUM_DETAILS;
-                    }
+                    lastUserWordDetails = {};
+                    machineState = STATES.CHECKSUM_DETAILS;
                 }
             }
             else if (machineState === STATES.TMR_INPUT) {
@@ -1632,7 +1674,10 @@
                             machineState = STATES.SHOW_TRIPLE_CHKSUM_12;
                         } else {
                             drawtext(50, 60, "COMPUTING...", "yellow");
+                            excessBits = entropyBits.substring(targetBits);
+                            entropyBits = entropyBits.substring(0, targetBits);
                             await generateFinalSeed();
+                            lastUserWordDetails = {};
                             machineState = STATES.CHECKSUM_DETAILS;
                         }
                     }
@@ -1647,7 +1692,9 @@
                 machineState = STATES.SHOW_TRIPLE_CHKSUM_12;
             }
             else if (machineState === STATES.SHOW_TRIPLE_CHKSUM_12) {
-                if (btn === 'OK') machineState = STATES.SHOW_TRIPLE_CHKSUM_24;
+                if (btn === 'OK') {
+                    machineState = STATES.SHOW_TRIPLE_CHKSUM_24;
+                }
             }
             else if (machineState === STATES.SHOW_TRIPLE_CHKSUM_24) {
                 if (btn === 'OK') {
@@ -1657,11 +1704,6 @@
             }
             else if (machineState === STATES.CHECKSUM_DETAILS) {
                 if (btn === 'OK') machineState = STATES.SHOW_SEED;
-            }
-            else if (machineState === STATES.EXCESS_BITS) {
-                if (btn === 'OK') {
-                    machineState = STATES.CHECKSUM_DETAILS;
-                }
             }
             else if (machineState === STATES.SHOW_SEED) {
                 if (createMode === "TRIPLE") {
@@ -1694,7 +1736,8 @@
                     if (machineState === STATES.SD_WRITE) {
                         if (writeToVirtualSD(absolute_slot)) ioStatusMsg = "SUCCESS";
                         else ioStatusMsg = "ERROR";
-                    } else if (machineState === STATES.SD_READ) {
+                    } 
+                    else if (machineState === STATES.SD_READ) {
                         let res = await loadFromVirtualSD(absolute_slot);
                         if (res === 0) {
                             if (createMode === "BIP85") {
@@ -1703,6 +1746,10 @@
                                 drawtext(50, 65, "MNEMONIC...", "white");
                                 await processBIP85();
                                 machineState = STATES.SHOW_SEED;
+                            } else if (createMode === "TRIPLE") {
+                                // Compute triple mnemonic logic and navigate to first checksum screen matching main_2.c
+                                await processTripleMnemonic();
+                                machineState = STATES.SHOW_TRIPLE_CHKSUM_12;
                             } else {
                                 machineState = STATES.SHOW_SEED;
                             }
@@ -1719,6 +1766,7 @@
                         }
                     }
                 }
+            
             }
             render();
         }
