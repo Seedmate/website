@@ -927,8 +927,10 @@
             SD_WRITE: 8, SEL_INPUT: 9, SD_READ: 10, SD_ERASE: 11,
             DICE_MODE: 12, HASH_MODE: 13, DICE_INPUT: 14, DICE_HASH_INPUT: 15, CARD_INPUT: 16, TMR_INPUT: 17,
             PROCESS_TRIPLE: 18, SHOW_TRIPLE_CHKSUM_12: 19, SHOW_TRIPLE_CHKSUM_24: 20,
-            CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24
+            CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24,
+            EXCESS_BITS: 25 // Added excess bits state
         };
+        let excessBits = ""; // Global variable to store leftover bits when entropy exceeds targetBits
         let machineState = STATES.INIT;
         let ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0 };
         let sd_page = 0;
@@ -1046,6 +1048,20 @@
                     renderEntropyBuilding();
                     grid_keyboard();
                     break;
+                    
+                case STATES.EXCESS_BITS:
+                    drawtext(1, 10, "EXCESS BITS:", "white");
+                    // Render excess bits in cyan, wrapping or displaying them clearly
+                    let exLen = excessBits.length;
+                    for (let i = 0; i < exLen; i++) {
+                        let rx = (i % 25) * 6;
+                        let ry = 25 + Math.floor(i / 25) * 10;
+                        drawtext(1 + rx, ry, excessBits[i], "cyan");
+                    }
+                    drawtext(1, 80, `Total collected: ${targetBits + exLen} bits`, "yellow");
+                    drawtext(1, 95, `Using exact: ${targetBits} bits`, "green");
+                    grid_OK_only();
+                    break;
 
                 case STATES.TMR_INPUT:
                     drawtext(1, 5, "STOP timer to set entropy", "white");
@@ -1157,7 +1173,7 @@
                         
                         let b_len = targetBits === 128 ? 7 : 3;
                         drawtext(1, 55, checksumDetails.b_str, "orange");
-                        drawtext(1 + (b_len * 6), 55, checksumDetails.c_str, "cyan");
+                        drawtext(6 + (b_len * 6), 55, checksumDetails.c_str, "cyan");
                         
                         drawtext(1, 65, "decimal:", "white");
                         drawtext(55, 65, checksumDetails.decimal.toString().padStart(4, '0'), "yellow");
@@ -1167,7 +1183,7 @@
                         drawtext(1, 5, "Checksum word:", "white");
                         let b_len = targetBits === 128 ? 7 : 3;
                         drawtext(1, 15, checksumDetails.b_str, "orange");
-                        drawtext(1 + (b_len * 6), 15, checksumDetails.c_str, "cyan");
+                        drawtext(6 + (b_len * 6), 15, checksumDetails.c_str, "cyan");
                         drawtext(1, 25, "decimal:", "white");
                         drawtext(55, 25, checksumDetails.decimal.toString().padStart(4, '0'), "yellow");
                         drawtext(1, 35, "word:", "white");
@@ -1557,6 +1573,7 @@
                     }
                 }
             }
+            
             else if (machineState === STATES.CARD_INPUT) {
                 if (btn === 'LEFT') cardFieldPtr = 0;
                 else if (btn === 'RIGHT') cardFieldPtr = 1;
@@ -1588,8 +1605,18 @@
 
                 if (entropyBits.length >= targetBits) {
                     drawtext(50, 60, "COMPUTING...", "yellow");
+                    
+                    // Capture excess bits and trim entropy to exact target length
+                    excessBits = entropyBits.substring(targetBits);
+                    entropyBits = entropyBits.substring(0, targetBits);
+                    
                     await generateFinalSeed();
-                    machineState = STATES.CHECKSUM_DETAILS;
+                    
+                    if (excessBits.length > 0) {
+                        machineState = STATES.EXCESS_BITS;
+                    } else {
+                        machineState = STATES.CHECKSUM_DETAILS;
+                    }
                 }
             }
             else if (machineState === STATES.TMR_INPUT) {
@@ -1630,6 +1657,11 @@
             }
             else if (machineState === STATES.CHECKSUM_DETAILS) {
                 if (btn === 'OK') machineState = STATES.SHOW_SEED;
+            }
+            else if (machineState === STATES.EXCESS_BITS) {
+                if (btn === 'OK') {
+                    machineState = STATES.CHECKSUM_DETAILS;
+                }
             }
             else if (machineState === STATES.SHOW_SEED) {
                 if (createMode === "TRIPLE") {
