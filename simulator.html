@@ -466,9 +466,18 @@
             drawtext(130, 107, "OK", "white", null); drawtext(67, 107, "DEL", "white", null);
         }
         function grid_OK_only() { print_cursor_grid(); drawtext(130, 107, "OK", "white", null); }
-        function grid_menuwr() { 
-            print_cursor_grid(); print_up_arrow(103, 114); print_down_arrow(103, 123); drawtext(130, 107, "OK", "white", null);
-            drawtext(64, 107, "LIST", "white", null); drawtext(122, 117, "PAG+", "white", null); drawtext(62, 117, "PAG-", "white", null); 
+        function grid_menuwr(showBack = false) { 
+            print_cursor_grid(); 
+            print_up_arrow(103, 114); 
+            print_down_arrow(103, 123); 
+            drawtext(130, 107, "OK", "white", null);
+            
+            // Toggle between BACK and LIST based on the parameter
+            let topLeftText = showBack ? "BACK" : "LIST";
+            drawtext(64, 107, topLeftText, "white", null); 
+            
+            drawtext(122, 117, "PAG+", "white", null); 
+            drawtext(62, 117, "PAG-", "white", null); 
         }
 
         function drawMenu(options, ptr, isMainMenu = false) {
@@ -996,19 +1005,17 @@
             SD_WRITE: 8, SEL_INPUT: 9, SD_READ: 10, SD_ERASE: 11,
             DICE_MODE: 12, HASH_MODE: 13, DICE_INPUT: 14, DICE_HASH_INPUT: 15, CARD_INPUT: 16, TMR_INPUT: 17,
             PROCESS_TRIPLE: 18, SHOW_TRIPLE_CHKSUM_12: 19, SHOW_TRIPLE_CHKSUM_24: 20,
-            CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24
+            CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24,
+            SEL_XOR: 25, SD_READ_XOR: 26 // Nuevos estados para XOR
         };
+
         // Global pointer object storing menu navigation indexes
-        let ptrs = { 
-            main: 0, 
-            create: 0, 
-            size: 0, 
-            sd: 0, 
-            input: 0, 
-            dice: 0, 
-            hash: 0, 
-            diceHashChar: 0 
-        };
+        let ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0, dice: 0, hash: 0, diceHashChar: 0, xor: 0 };
+
+        let xorMergeWordsAvailable = 0;
+        let xorMergeWord1 = new Uint8Array(32);
+        let xorMergeWord2 = new Uint8Array(32);
+        let xorMergeWord3 = new Uint8Array(32);
 
         // State variables for SD UI and I/O feedback
         let sdPage = 0;
@@ -1140,10 +1147,15 @@
                     }
                     grid_OK_only();
                     break;
+                
+                case STATES.SEL_XOR: 
+                    drawMenu(menu_xor, ptrs.xor, false); 
+                    break;                    
 
                 case STATES.WRITE_WORD:
                     drawtext(1, 10, "WORD:", "white");
-                    drawtext(35, 10, kbWordIdx.toString() + ".", "white");
+                    let suffix = (createMode === "XOR") ? String.fromCharCode(65 + xorMergeWordsAvailable) : "";
+                    drawtext(35, 10, kbWordIdx.toString() + suffix + ".", "white");
                     if (kbWord.length > 0) drawtext(60, 10, kbWord, "white");
                     
                     if (kbFoundWord) {
@@ -1331,7 +1343,7 @@
                     drawSDMenuUI();
                     if (ioStatusMsg === "SUCCESS") drawtext(70, 20 + ptrs.sd * 10, "WRITE SUCCESS", "green");
                     else if (ioStatusMsg === "ERROR") drawtext(70, 20 + ptrs.sd * 10, "WRITE ERROR ", "red");
-                    grid_menuwr();
+                    grid_menuwr(false); // Keep "LIST" for writing
                     break;
 
                 case STATES.SD_READ:
@@ -1339,7 +1351,7 @@
                     drawSDMenuUI();
                     if (ioStatusMsg === "NO SEED") drawtext(70, 20 + ptrs.sd * 10, "NO SEED", "red");
                     else if (ioStatusMsg === "ERROR") drawtext(70, 20 + ptrs.sd * 10, "SD ERROR ", "red");
-                    grid_menuwr(); 
+                    grid_menuwr(true); // Show "BACK" for reading (Load SD)
                     break;
 
                 case STATES.SD_ERASE:
@@ -1347,8 +1359,18 @@
                     drawSDMenuUI();
                     if (ioStatusMsg === "SUCCESS") drawtext(70, 20 + ptrs.sd * 10, "ERASE SUCCESS", "green");
                     else if (ioStatusMsg === "ERROR") drawtext(70, 20 + ptrs.sd * 10, "ERASE ERROR ", "red");
-                    grid_menuwr(); 
+                    grid_menuwr(true); // Show "BACK" for erasing
                     break;
+                case STATES.SD_READ_XOR:
+                    let xorSuffix = String.fromCharCode(65 + xorMergeWordsAvailable);
+                    drawtext(1, 10, "SELECT SLOT FOR XOR " + xorSuffix, "white");
+                    drawSDMenuUI();
+                    if (ioStatusMsg === "NO SEED") drawtext(70, 20 + ptrs.sd * 10, "NO SEED", "red");
+                    else if (ioStatusMsg === "ERROR") drawtext(70, 20 + ptrs.sd * 10, "SD ERROR ", "red");
+                    else if (ioStatusMsg === "WRONG SIZE") drawtext(70, 20 + ptrs.sd * 10, "WRONG SIZE", "red");
+                    else if (ioStatusMsg === "XOR INPUT OK") drawtext(70, 20 + ptrs.sd * 10, "XOR INPUT OK", "green");
+                    grid_menuwr(true); 
+                    break;                    
             }
         }
 
@@ -1408,6 +1430,7 @@
                         createMode = "LOAD"; 
                     }
                     else if (ptrs.main === 2) { machineState = STATES.CHILD_CONFIG; bip85Cursor = 0; bip85Size = 0; bip85Index = 0; }
+                    else if (ptrs.main === 4) { machineState = STATES.SEL_XOR; ptrs.xor = 0; }
                     else if (ptrs.main === 7) { machineState = STATES.SD_ERASE; ptrs.sd = 0; sdPage = 0; ioStatusMsg = ""; lastIoSlot = -1; }
                 }
             } 
@@ -1460,16 +1483,20 @@
                 if (btn === 'DOWN' && ptrs.input < menu_input.length - 1) ptrs.input++;
                 if (btn === 'UP' && ptrs.input > 0) ptrs.input--;
                 if (btn === 'BACK') {
-                    if (createMode === "BIP85") machineState = STATES.CHILD_CONFIG;
-                    else machineState = STATES.MAIN;
+                if (createMode === "BIP85") machineState = STATES.CHILD_CONFIG;
+                else if (createMode === "XOR") machineState = STATES.SEL_XOR; // <-- RETORNO XOR
+                else machineState = STATES.MAIN;
+            }
+            if (btn === 'OK') {
+                if (ptrs.input === 0) { 
+                    machineState = (createMode === "TRIPLE" || createMode === "BIP85") ? STATES.WRITE_WORD : STATES.SIZE; 
+                    kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
                 }
-                if (btn === 'OK') {
-                    if (ptrs.input === 0) { 
-                        machineState = (createMode === "TRIPLE" || createMode === "BIP85") ? STATES.WRITE_WORD : STATES.SIZE; 
-                        kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
-                    }
-                    else if (ptrs.input === 1) { machineState = STATES.SD_READ; ptrs.sd = 0; sdPage = 0; ioStatusMsg = ""; lastIoSlot = -1; }
+                else if (ptrs.input === 1) { 
+                    if (createMode === "XOR") { machineState = STATES.SIZE; } // <-- XOR SIEMPRE PIDE TAMAÑO ANTES
+                    else { machineState = STATES.SD_READ; ptrs.sd = 0; sdPage = 0; ioStatusMsg = ""; lastIoSlot = -1; }
                 }
+            }
             }
             else if (machineState === STATES.SIZE) {
                 if (btn === 'DOWN' && ptrs.size < menu_size.length - 1) ptrs.size++;
@@ -1478,6 +1505,7 @@
                     if (createMode === "DICE_RAW") machineState = STATES.DICE_MODE;
                     else if (createMode === "DICE_HASH") machineState = STATES.HASH_MODE;
                     else if (createMode === "KEYBOARD") machineState = STATES.CREATE;
+                    else if (createMode === "XOR") machineState = STATES.SEL_INPUT; // <-- RETORNO XOR
                     else machineState = STATES.CREATE;
                 }
                 if (btn === 'OK') {
@@ -1506,7 +1534,17 @@
                         kbWord = ""; 
                         kbCharIdx = 0; 
                         kbUpdateValidLetters();
+                    } else if (createMode === "XOR") { // Inicialización de variables para XOR
+                    xorMergeWordsAvailable = 0;
+                    xorMergeWord1.fill(0); xorMergeWord2.fill(0); xorMergeWord3.fill(0);
+                    if (ptrs.input === 0) {
+                        machineState = STATES.WRITE_WORD;
+                        kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
+                    } else {
+                        machineState = STATES.SD_READ_XOR;
+                        ptrs.sd = 0; sdPage = 0; ioStatusMsg = ""; lastIoSlot = -1;
                     }
+                }
                 }
             }
             else if (machineState === STATES.WRITE_WORD) {
@@ -1617,6 +1655,35 @@
                                             // Awaiting processBIP85 blocks the UI thread momentarily, but logic will flow correctly
                                             await processBIP85();
                                             machineState = STATES.SHOW_SEED;
+                                        } else if (createMode === "XOR") {
+                                            if (xorMergeWordsAvailable <= ptrs.xor) {
+                                                // Keep track of which XOR word slot to fill next
+                                                if (xorMergeWordsAvailable === 0) xorMergeWord1.set(finalByteArray);
+                                                else if (xorMergeWordsAvailable === 1) xorMergeWord2.set(finalByteArray);
+                                                else if (xorMergeWordsAvailable === 2) xorMergeWord3.set(finalByteArray);
+                                                
+                                                xorMergeWordsAvailable++;
+                                                
+                                                // Reset for the next XOR word input
+                                                entropyBits = "";
+                                                kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
+                                            } else {
+                                                // All XOR words have been collected, now perform the XOR merge
+                                                let bytesLen = targetBits / 8; // FIX: Only process required bytes (16 or 32)
+                                                for (let i = 0; i < bytesLen; i++) {
+                                                    finalByteArray[i] ^= xorMergeWord1[i] ^ xorMergeWord2[i] ^ xorMergeWord3[i];
+                                                }
+                                                
+                                                // Convert the final merged byte array back to a binary string
+                                                entropyBits = "";
+                                                for(let i = 0; i < bytesLen; i++) { // FIX: Use bytesLen instead of array.length
+                                                    entropyBits += finalByteArray[i].toString(2).padStart(8, '0');
+                                                }
+                                                
+                                                // Reuse existing function to compute correct SHA256 checksum and build valid mnemonic
+                                                await generateFinalSeed();
+                                                machineState = STATES.SHOW_SEED;
+                                            }
                                         } else {
                                             // Standard Load Success
                                             machineState = STATES.SHOW_SEED;
@@ -1670,9 +1737,34 @@
             else if (machineState === STATES.DICE_HASH_INPUT) {
                 let target_rolls = (targetBits === 128) ? 50 : 99;
                 let len = diceHashStr.length;
-                if (btn === 'LEFT') { ptrs.diceHashChar = Math.max(0, ptrs.diceHashChar - 1); }
-                else if (btn === 'RIGHT') { ptrs.diceHashChar = Math.min(6, ptrs.diceHashChar + 1); }
-                else if (btn === 'BACK') { if (len > 0) diceHashStr = diceHashStr.slice(0, -1); }
+                
+                // Determine the maximum accessible index.
+                // 6 is 'DONE', which is only reachable if we have enough rolls.
+                let max_idx = (len >= target_rolls) ? 6 : 5;
+
+                if (btn === 'LEFT') { 
+                    ptrs.diceHashChar--;
+                    // Wrap around to the rightmost valid option
+                    if (ptrs.diceHashChar < 0) {
+                        ptrs.diceHashChar = max_idx; 
+                    }
+                }
+                else if (btn === 'RIGHT') { 
+                    ptrs.diceHashChar++;
+                    // Wrap around to the leftmost option
+                    if (ptrs.diceHashChar > max_idx) {
+                        ptrs.diceHashChar = 0; 
+                    }
+                }
+                else if (btn === 'BACK') { 
+                    if (len > 0) {
+                        diceHashStr = diceHashStr.slice(0, -1); 
+                        // If deleting a roll drops the count below the target while on 'DONE', snap back to '6'
+                        if (diceHashStr.length < target_rolls && ptrs.diceHashChar === 6) {
+                            ptrs.diceHashChar = 5;
+                        }
+                    }
+                }
                 else if (btn === 'OK') {
                     if (ptrs.diceHashChar < 6) {
                         if (len < 200 * 3) {
@@ -1796,14 +1888,22 @@
                 if (btn === 'OK') machineState = STATES.QR_STD;
                 if (btn === 'RIGHT') machineState = STATES.QR_CMPCT; 
             }
+            else if (machineState === STATES.SEL_XOR) {
+                if (btn === 'DOWN' && ptrs.xor < menu_xor.length - 1) ptrs.xor++;
+                if (btn === 'UP' && ptrs.xor > 0) ptrs.xor--;
+                if (btn === 'BACK') machineState = STATES.MAIN;
+                if (btn === 'OK') { createMode = "XOR"; machineState = STATES.SEL_INPUT; ptrs.input = 0; }
+            }
             else if (machineState === STATES.QR_STD || machineState === STATES.QR_CMPCT) {
                 if (btn === 'BACK' || btn === 'LEFT') machineState = STATES.SHOW_SEED;
             }
-            else if (machineState === STATES.SD_WRITE || machineState === STATES.SD_READ || machineState === STATES.SD_ERASE) {
+           
+            else if (machineState === STATES.SD_WRITE || machineState === STATES.SD_READ || machineState === STATES.SD_ERASE || machineState === STATES.SD_READ_XOR) {
                 if (btn === 'BACK') {
                     if (machineState === STATES.SD_WRITE) machineState = STATES.SHOW_SEED;
                     else if (machineState === STATES.SD_READ) machineState = STATES.SEL_INPUT;
                     else if (machineState === STATES.SD_ERASE) machineState = STATES.MAIN;
+                    else if (machineState === STATES.SD_READ_XOR) machineState = STATES.SIZE;
                 }
                 if (btn === 'UP' && ptrs.sd > 0) { ptrs.sd--; ioStatusMsg = ""; }
                 if (btn === 'DOWN' && ptrs.sd < 7) { ptrs.sd++; ioStatusMsg = ""; }
@@ -1846,12 +1946,54 @@
                             localStorage.setItem('seedmate_sd', JSON.stringify(virtualSd));
                             ioStatusMsg = "SUCCESS";
                         }
+                    } else if (machineState === STATES.SD_READ_XOR) { 
+                        let buffer = virtualSd[absolute_slot];
+                        if (!buffer || buffer.length === 0) {
+                            ioStatusMsg = "NO SEED";
+                        } else {
+                            let expectedSizeFlag = (targetBits === 128) ? 0 : 1;
+                            if (buffer[65] !== expectedSizeFlag) {
+                                ioStatusMsg = "WRONG SIZE";
+                            } else {
+                                let res = await loadFromVirtualSD(absolute_slot);
+                                if (res === 0) {
+                                    ioStatusMsg = "XOR INPUT OK";
+                                    if (xorMergeWordsAvailable <= ptrs.xor) {
+                                        if (xorMergeWordsAvailable === 0) xorMergeWord1.set(finalByteArray);
+                                        else if (xorMergeWordsAvailable === 1) xorMergeWord2.set(finalByteArray);
+                                        else if (xorMergeWordsAvailable === 2) xorMergeWord3.set(finalByteArray);
+                                        
+                                        xorMergeWordsAvailable++;
+                                    } else {
+                                        // All XOR words have been collected from SD, perform merge
+                                        let bytesLen = targetBits / 8; // FIX: Strict boundary to prevent 256-bit overrun on 12W
+                                        for (let i = 0; i < bytesLen; i++) {
+                                            finalByteArray[i] ^= xorMergeWord1[i] ^ xorMergeWord2[i] ^ xorMergeWord3[i];
+                                        }
+                                        
+                                        // Reconstruct binary entropy string strictly up to targetBits
+                                        entropyBits = "";
+                                        for(let i = 0; i < bytesLen; i++) { // FIX: Use bytesLen here as well
+                                            entropyBits += finalByteArray[i].toString(2).padStart(8, '0');
+                                        }
+                                        
+                                        // Compute valid checksum for the XORed entropy
+                                        await generateFinalSeed();
+                                        machineState = STATES.SHOW_SEED;
+                                    }
+                                } else if (res === 2) {
+                                    ioStatusMsg = "NO SEED";
+                                } else {
+                                    ioStatusMsg = "ERROR";
+                                }
+                            }
+                        }
                     }
-                }
+                } 
+            } 
             
-            }
             render();
-        }
+        } // End of handleInput(btn)
 
         // Map physical keyboard keys to emulator buttons
         const keyMap = {
