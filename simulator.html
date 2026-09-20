@@ -245,7 +245,7 @@
             
             <div class="bottom-area">
                 <div class="power-switch-container">
-                    <div class="power-switch on" id="powerBtn">
+                    <div class="power-switch" id="powerBtn">
                         <div class="power-label">OFF/ON</div>
                     </div>
                 </div>
@@ -262,8 +262,8 @@
                         <button class="key" id="btn-right" onpointerdown="startInput('RIGHT')" onpointerup="stopInput()" onpointerleave="stopInput()" title="RIGHT (COMPACT QR)"></button>
                     </div>
                     <div class="leds">
-                        <i class="led" id="led-top"></i>
-                        <i class="led white-on" id="led-bottom"></i>
+                        <i class="led" id="led-top" style="background: #111;"></i>
+                        <i class="led" id="led-bottom"></i>
                     </div>
                 </div>
             </div>
@@ -284,7 +284,7 @@
     <script>
         // --- 1. BASE SYSTEM & VIRTUAL SD ---
         let wordlist = [];
-        let isPoweredOn = true;
+        let isPoweredOn = false;
         let sdReady = true; 
         let virtualSd = JSON.parse(localStorage.getItem('seedmate_sd')) || Array(8).fill(null);
 
@@ -906,9 +906,14 @@
         function renderQR(type) {
             let qr;
             if (type === 'STANDARD') {
-                qr = qrcode(0, 'M');
+                // Set Error Correction Level (ECC): 'Q' for 12 words (128 bits), 'M' otherwise
+                let eccLevel = (targetBits === 128) ? 'Q' : 'M';
+                qr = qrcode(0, eccLevel);
+                
                 let seedqr_str = "";
-                for (let i = 0; i < currentSeedWords.length; i++) seedqr_str += currentSeedWords[i].index.toString().padStart(4, '0');
+                for (let i = 0; i < currentSeedWords.length; i++) {
+                    seedqr_str += currentSeedWords[i].index.toString().padStart(4, '0');
+                }
                 qr.addData(seedqr_str, 'Numeric');
             } else if (type === 'COMPACT') {
                 // Version 1 for 12W, Version 3 for 24W to prevent crashes on capacity
@@ -956,10 +961,22 @@
             PROCESS_TRIPLE: 18, SHOW_TRIPLE_CHKSUM_12: 19, SHOW_TRIPLE_CHKSUM_24: 20,
             CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24
         };
-        let machineState = STATES.INIT;
-        let ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0 };
-        let sd_page = 0;
-        let io_status = "";
+        // Global pointer object storing menu navigation indexes
+        let ptrs = { 
+            main: 0, 
+            create: 0, 
+            size: 0, 
+            sd: 0, 
+            input: 0, 
+            dice: 0, 
+            hash: 0, 
+            diceHashChar: 0 
+        };
+
+        // State variables for SD UI and I/O feedback
+        let sdPage = 0;
+        let ioStatusMsg = "";
+        let lastIoSlot = -1;
 
         // --- Navigation Menus (Mapped from main.c) ---
         const menu_main = ["CREATE NEW SEED WORDS", "LOAD SEED WORDS", "BIP85 CHILD SEED", "SHAMIR SECRET SHARE", "SEED WORD XOR", "OBFUSCATION", "MNEMONIC TO CARDS", "ERASE SD", "RESOURCES", "SETTINGS"];
@@ -989,7 +1006,7 @@
                     print_camera(5, 110, false);
                     drawtext(23, 102, "=QR NOT Safe for phone", "red");
                     drawtext(5, 119, "(Press any button)", "white");
-                    drawtext(120, 119, "v1.7", "white");
+                    drawtext(120, 119, "v1.7sim", "white");
                     break;
                 case STATES.MAIN: drawMenu(menu_main, ptrs.main, true); break;
                 case STATES.CREATE: drawMenu(menu_create, ptrs.create, false); break;
@@ -1173,10 +1190,10 @@
                             drawtext(1 + (i * 6), 12, user_b[i], bitColor);
                         }
                         
-                        // Render user checksum bits part, comparing bit-by-bit against the correct checksum
+                        // Render user checksum bits part. Force all user checksum bits to red to match hardware behavior.
                         let startX = 1 + (b_len_user * 6);
                         for (let i = 0; i < user_c.length; i++) {
-                            let bitColor = (user_c[i] === correct_c[i]) ? "cyan" : "red";
+                            let bitColor = "red"; 
                             drawtext(startX + (i * 6), 12, user_c[i], bitColor);
                         }
                         
