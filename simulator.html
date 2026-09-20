@@ -765,6 +765,9 @@
             let lastMatch = "";
             let prefix = kbWord.toLowerCase();
             
+            // Flag to track if the current typed string is an exact, complete valid word
+            let exactMatchFound = false; 
+
             if (prefix.length === 0) {
                 kbValidMask.fill(true);
                 kbValidMask[23] = false; 
@@ -782,15 +785,24 @@
                         let charCode = nextChar.charCodeAt(0) - 65;
                         if (charCode >= 0 && charCode < 26) kbValidMask[charCode] = true;
                     } else if (w.length === prefix.length) {
-                        kbValidMask[26] = true;
+                        // We found a word that matches the input exactly
+                        exactMatchFound = true;
                     }
                 }
             }
             
-            if (matches === 1 && kbWord.length > 0) {
+            // Priority 1: Exact match allows confirming the word immediately, even if longer words exist
+            if (exactMatchFound) {
+                kbFoundWord = prefix.toUpperCase();
+                kbValidMask[26] = true;
+            } 
+            // Priority 2: Auto-complete if there is only one possible match remaining
+            else if (matches === 1 && kbWord.length > 0) {
                 kbFoundWord = lastMatch.toUpperCase();
                 kbValidMask[26] = true;
-            } else {
+            } 
+            // Priority 3: Keep typing, OK button disabled
+            else {
                 kbFoundWord = "";
                 kbValidMask[26] = false;
             }
@@ -905,22 +917,47 @@
         // --- 4. QR CODE ---
         function renderQR(type) {
             let qr;
+            
+            // Filter words and bytes based on TRIPLE mode state
+            let displayWords = currentSeedWords;
+            let displayBits = targetBits;
+            let qrDataBytes = finalByteArray;
+            
+            if (createMode === "TRIPLE" && tripleViewState === 1) {
+                // First list: Words 1-12
+                displayWords = currentSeedWords.slice(0, 12);
+                displayBits = 128;
+                qrDataBytes = finalByteArray.slice(0, 16);
+            } else if (createMode === "TRIPLE" && tripleViewState === 2) {
+                // Second list: Words 13-24
+                displayWords = currentSeedWords.slice(12, 24);
+                displayBits = 128;
+                
+                // Extract the 16 bytes (128 bits) of entropy for the second seed
+                let secondHalfEntropy = new Uint8Array(16);
+                for (let b = 0; b < 128; b++) {
+                    let bit = parseInt(entropyBits[132 + b]);
+                    if (bit) secondHalfEntropy[Math.floor(b / 8)] |= (1 << (7 - (b % 8)));
+                }
+                qrDataBytes = secondHalfEntropy;
+            }
+
             if (type === 'STANDARD') {
                 // Set Error Correction Level (ECC): 'Q' for 12 words (128 bits), 'M' otherwise
-                let eccLevel = (targetBits === 128) ? 'Q' : 'M';
+                let eccLevel = (displayBits === 128) ? 'Q' : 'M';
                 qr = qrcode(0, eccLevel);
                 
                 let seedqr_str = "";
-                for (let i = 0; i < currentSeedWords.length; i++) {
-                    seedqr_str += currentSeedWords[i].index.toString().padStart(4, '0');
+                for (let i = 0; i < displayWords.length; i++) {
+                    seedqr_str += displayWords[i].index.toString().padStart(4, '0');
                 }
                 qr.addData(seedqr_str, 'Numeric');
             } else if (type === 'COMPACT') {
                 // Version 1 for 12W, Version 3 for 24W to prevent crashes on capacity
-                qr = qrcode(targetBits === 128 ? 1 : 2, 'L'); 
-                let bytesLen = targetBits / 8;
+                qr = qrcode(displayBits === 128 ? 1 : 2, 'L'); 
+                let bytesLen = displayBits / 8;
                 let data = new Uint8Array(bytesLen);
-                for(let i=0; i<bytesLen; i++) data[i] = finalByteArray[i];
+                for(let i=0; i<bytesLen; i++) data[i] = qrDataBytes[i];
                 let byteStr = String.fromCharCode.apply(null, data);
                 qr.addData(byteStr, 'Byte');
             }
@@ -1254,12 +1291,14 @@
                     let x_index = 0;
                     
                     for (let i = 0; i < totalW; i++) {
-                        let isLast = (i === totalW - 1) && (tripleViewState === 0 || tripleViewState === 1 || createMode !== "TRIPLE");
+                        // Check if it's the last word in the current view
+                        let isLast = (i === totalW - 1);
                         let dispNum = i + 1 + startWordIdx;
                         let numStr = dispNum.toString();
-                        
-                        // Highlight words 12, 23, and 24 in green for Triple Mnemonic mode matching main.c
-                        let isTripleHighlight = (createMode === "TRIPLE" && tripleViewState === 0 && (dispNum === 12 || dispNum === 23 || dispNum === 24));
+
+                        // Highlight words 12 and 23 in green for the full 24-word Triple Mnemonic view. 
+                        // Word 24 is already covered by 'isLast' above.
+                        let isTripleHighlight = (createMode === "TRIPLE" && tripleViewState === 0 && (dispNum === 12 || dispNum === 23));
                         let wordColor = (isLast || isTripleHighlight) ? "#3FBF7F" : "white";
 
                         drawtext(x_index, y_index, numStr, "white");
@@ -1363,7 +1402,11 @@
                 if (btn === 'UP' && ptrs.main > 0) ptrs.main--;
                 if (btn === 'OK') {
                     if (ptrs.main === 0) machineState = STATES.CREATE;
-                    else if (ptrs.main === 1) { machineState = STATES.SEL_INPUT; ptrs.input = 0; }
+                    else if (ptrs.main === 1) { 
+                        machineState = STATES.SEL_INPUT; 
+                        ptrs.input = 0; 
+                        createMode = "LOAD"; 
+                    }
                     else if (ptrs.main === 2) { machineState = STATES.CHILD_CONFIG; bip85Cursor = 0; bip85Size = 0; bip85Index = 0; }
                     else if (ptrs.main === 7) { machineState = STATES.SD_ERASE; ptrs.sd = 0; sdPage = 0; ioStatusMsg = ""; lastIoSlot = -1; }
                 }
@@ -1457,9 +1500,12 @@
                         machineState = STATES.TMR_INPUT;
                         tmrHexList = [];
                     }
-                    else if (createMode === "KEYBOARD") {
+                    else if (createMode === "KEYBOARD" || createMode === "LOAD") {
                         machineState = STATES.WRITE_WORD;
-                        kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
+                        kbWordIdx = 1; 
+                        kbWord = ""; 
+                        kbCharIdx = 0; 
+                        kbUpdateValidLetters();
                     }
                 }
             }
@@ -1541,23 +1587,42 @@
                                 kbCharIdx = 0;
                                 kbWordIdx++;
                             } else {
+                                // --- VALIDATION MODE FOR THE LAST WORD (LOAD / BIP85 / TRIPLE) ---
+                                // Append the full 11 bits of the final word before doing validation
+                                entropyBits += wordIndex.toString(2).padStart(11, '0');
                                 if (createMode === "TRIPLE") {
                                     await processTripleMnemonic();
                                     machineState = STATES.SHOW_TRIPLE_CHKSUM_12;
                                 } else {
+                                    // Extract the entropy part to calculate the expected SHA256 checksum
                                     let reqEntropyBytes = targetBits / 8;
                                     let eBytes = new Uint8Array(reqEntropyBytes);
                                     for(let i = 0; i < reqEntropyBytes; i++) {
                                         eBytes[i] = parseInt(entropyBits.substring(i * 8, (i + 1) * 8), 2);
                                     }
+                                    
                                     let calcHash = await calculateSHA256(eBytes);
                                     let expectedChk = calcHash[0].toString(2).padStart(8, '0').substring(0, checksumLen);
+                                    
+                                    // Extract the user's typed checksum from the end of the bits stream
                                     let userChk = entropyBits.substring(targetBits, targetBits + checksumLen);
                                     
+                                    // Validate checksum
                                     if (expectedChk === userChk) {
                                         await generateFinalSeed(); 
-                                        machineState = STATES.SHOW_SEED;
+                                        
+                                        // Check if we were loading a seed specifically to generate a BIP85 child
+                                        if (createMode === "BIP85") {
+                                            machineState = STATES.PROCESS_BIP85;
+                                            // Awaiting processBIP85 blocks the UI thread momentarily, but logic will flow correctly
+                                            await processBIP85();
+                                            machineState = STATES.SHOW_SEED;
+                                        } else {
+                                            // Standard Load Success
+                                            machineState = STATES.SHOW_SEED;
+                                        }
                                     } else {
+                                        // Checksum mismatch or invalid words combination
                                         machineState = STATES.WORD_LIST_ERROR;
                                     }
                                 }
