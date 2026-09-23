@@ -631,6 +631,7 @@ footer a:hover{color:var(--green-hi)}
       <a href="#schemes">Recovery schemes</a>
       <a href="#specs">Specs</a>
       <a href="blog.html">Guides</a>
+      <a href="simulator.html">Simulator</a>
     </nav>
     <a class="buy-mini" href="#buy">Buy · €49</a>
     <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
@@ -663,16 +664,18 @@ footer a:hover{color:var(--green-hi)}
 
 
     <div class="device-stage">
-      <div class="device" id="device" role="img" aria-label="Seedmate device showing functions on screen">
-        <div class="screen" id="screen"></div>
-        <div class="keys">
-          <div class="keypad">
-            <i class="key"></i><i class="key"></i><i class="key"></i>
-            <i class="key"></i><i class="key"></i><i class="key"></i>
+      <a href="simulator.html" style="text-decoration: none; display: block; cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" title="Try the Simulator">
+        <div class="device" id="device" role="img" aria-label="Seedmate device showing functions on screen">
+          <div class="screen" id="screen"></div>
+          <div class="keys">
+            <div class="keypad">
+              <i class="key"></i><i class="key"></i><i class="key"></i>
+              <i class="key"></i><i class="key"></i><i class="key"></i>
+            </div>
+            <div class="leds"><i class="led"></i><i class="led white-on"></i></div>
           </div>
-          <div class="leds"><i class="led"></i><i class="led white-on"></i></div>
         </div>
-      </div>
+      </a>
       <div class="modes" role="tablist" aria-label="Seedmate functions">
         <button class="mode" role="tab" aria-selected="true" data-mode="menu">Menu</button>
         <button class="mode" role="tab" aria-selected="false" data-mode="dice">Dice</button>
@@ -693,6 +696,9 @@ footer a:hover{color:var(--green-hi)}
       <div class="hero-actions">
         <a href="https://youtu.be/J9tFtaR0LIU" target="_blank" class="video-link">
           <span class="play-icon">▶</span> Watch Seedmate overview
+        </a>
+        <a href="simulator.html" class="video-link" style="margin-left: 20px;">
+          <span class="play-icon">▶</span> Try the Simulator
         </a>
       </div>
     </div>
@@ -1276,10 +1282,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <a href="#capabilities">Capabilities</a>
         <a href="#faq">FAQ</a>
       </div>
-      <div>
+    <div>
         <h4>Resources</h4>
         <a href="https://github.com/Seedmate/Seedmate" target="_blank" rel="noopener noreferrer">Github repository</a></a>
         <a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">Offline HTML tool</a></a>        
+        <a href="simulator.html">Interactive Simulator</a>
         <a href="Printable BIP39 wordlist.pdf"target="_blank" rel="noopener noreferrer">Printable BIP39 wordlist</a>
         <a href="Binary_BIP39_wordlist.pdf" target="_blank" rel="noopener noreferrer"> BIP39 wordlist binary and decimal</a>
         <a href="FW_update.html" target="_blank" rel="noopener noreferrer">FW update procedure</a>
