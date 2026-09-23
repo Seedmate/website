@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>SeedMate - Hardware Emulator</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <style>
@@ -20,6 +20,12 @@
             align-items: center;
             margin-top: 100px;
             user-select: none;
+            
+            /* FIX: Permite el desplazamiento horizontal sin cortar el lado izquierdo en móviles */
+            min-width: max-content; 
+            
+            /* Opcional: añade algo de margen a los lados para que no pegue contra los bordes al hacer scroll */
+            padding: 0 20px 50px 20px; 
         }
 
         .device-wrapper {
@@ -212,9 +218,25 @@
 
         /* Color picker */
         .color-picker {
+            position: absolute;
+            right: -55px; 
+            top: 15%; 
             display: flex;
+            flex-direction: column;
             gap: 15px;
-            margin-top: 40px;
+        }
+        .bottom-tools-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .dice-and-card {
+            display: flex;
+            flex-direction: row;
+            gap: 40px;
+            align-items: center;
         }
         .swatch {
             width: 30px;
@@ -228,6 +250,144 @@
         .swatch.active { border-color: #fff; }
 
         .hints { margin-top: 15px; font-size: 11px; color: #888; text-align: center; }
+
+        .dice-tester {
+            position: relative;
+            display: flex;
+            gap: 15px;
+            background: #111;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 2px solid #333;
+            cursor: pointer;
+            box-shadow: inset 0 -2px 5px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5);
+            transition: transform 0.05s, border-color 0.2s;
+        }
+        .dice-tester:hover {
+            border-color: #555;
+        }
+        .dice-tester:active {
+            transform: translateY(4px);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.5);
+        }
+        
+        .card-tester {
+            position: relative;
+            width: 65px;
+            height: 95px;
+            background: #fff;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.05s;
+            user-select: none;
+        }
+        .card-tester:hover {
+            border-color: #888;
+        }
+        .card-tester:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .vcard-text {
+            font-size: 32px;
+            font-weight: bold;
+            line-height: 1.1;
+        }
+        .suit-red { color: #d00; }
+        .suit-black { color: #111; }
+        
+        .vdice {
+            font-size: 50px;
+            color: #fff;
+            line-height: 1;
+        }
+        /* Updated styles to match dice-tester */
+        .coin-tester {
+            display: flex;
+            gap: 15px;
+            padding: 15px 20px;
+            border: 2px solid #333; /* Dark border instead of white */
+            border-radius: 10px;    /* Box corners instead of pill shape */
+            cursor: pointer;
+            background: #111;
+            box-shadow: inset 0 -2px 5px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5);
+            transition: transform 0.05s, border-color 0.2s;
+        }
+        
+        /* Added hover effect to match dice-tester */
+        .coin-tester:hover {
+            border-color: #555;
+        }
+        
+        .coin-tester:active {
+            transform: translateY(4px);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.5);
+        }
+        .vcoin {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            
+            /* Restored size for better icon visibility */
+            font-size: 30px; 
+            
+            background: #C4C4C4 ;
+            color: #fff;
+        }       
+        /* Styles for the Hat/Word tool */
+        .hat-tester {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 20px;
+            border: 2px solid #333;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #111;
+            box-shadow: inset 0 -2px 5px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5);
+            transition: transform 0.05s, border-color 0.2s;
+            width: fit-content;
+        }
+        
+        .hat-tester:hover {
+            border-color: #555;
+        }
+        
+        .hat-tester:active {
+            transform: translateY(4px);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.5);
+        }
+
+        .hat-icon {
+            font-size: 30px; /* Size of the top hat emoji */
+        }
+
+        /* Styles for the piece of paper drawn from the hat */
+        .paper-slip {
+            background: #fdf6e3; /* Warm off-white paper color */
+            color: #111;
+            padding: 8px 20px;
+            border-radius: 2px;
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+            min-width: 90px;
+            text-align: center;
+            box-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+            text-transform: uppercase; /* Ensure words appear in caps */
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
@@ -259,24 +419,57 @@
                         <button class="key" id="btn-right" onpointerdown="startInput('RIGHT')" onpointerup="stopInput()" onpointerleave="stopInput()" title="RIGHT (COMPACT QR)"></button>
                     </div>
                     <div class="leds">
-                        <i class="led" id="led-top" style="background: #111;"></i>
+                        <i class="led" id="led-top" ></i>
                         <i class="led" id="led-bottom"></i>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="color-picker">
+            <div class="swatch" style="background:#fee904" onclick="changeColor('#fee904', this)"></div>
+            <div class="swatch" style="background:#2D5FC4" onclick="changeColor('#2D5FC4', this)"></div>
+            <div class="swatch active" style="background:#22A05A" onclick="changeColor('#22A05A', this)"></div>
+            <div class="swatch" style="background:#F2F2EE" onclick="changeColor('#F2F2EE', this)"></div>
+            <div class="swatch" style="background:#1C1C1C" onclick="changeColor('#1C1C1C', this)"></div>
+            <div class="swatch" style="background:#D6521C" onclick="changeColor('#D6521C', this)"></div>
+        </div>
     </div>
 
-    <div class="color-picker">
-        <div class="swatch" style="background:#D6521C" onclick="changeColor('#D6521C', this)"></div>
-        <div class="swatch" style="background:#1C1C1C" onclick="changeColor('#1C1C1C', this)"></div>
-        <div class="swatch" style="background:#F2F2EE" onclick="changeColor('#F2F2EE', this)"></div>
-        <div class="swatch active" style="background:#22A05A" onclick="changeColor('#22A05A', this)"></div>
-        <div class="swatch" style="background:#2D5FC4" onclick="changeColor('#2D5FC4', this)"></div>
-        <div class="swatch" style="background:#fee904" onclick="changeColor('#fee904', this)"></div>
-    </div>
+
 
     <div class="hints">Drag SD card up to extract. Keyboard enabled (Arrows, Enter, Backspace or 1,2,3,4,5,6).</div>
+    <div class="bottom-tools-container">
+        <!-- Dice and poker -->
+        <div class="dice-and-card">
+            <div class="dice-tester" onclick="rollVirtualDice()" title="Click to roll">
+                <div id="vdice1" class="vdice">⚄</div>
+                <div id="vdice2" class="vdice">⚂</div>
+                <div id="vdice3" class="vdice">⚀</div>
+                <div id="vdice4" class="vdice">⚅</div>
+            </div>
+            
+            <div class="card-tester" onclick="drawVirtualCard()" title="Haz clic para sacar una carta">
+                <div id="vcard-rank" class="vcard-text">A</div>
+                <div id="vcard-suit" class="vcard-text suit-black">♠</div>
+            </div>
+        </div>
+
+        <!-- Container for the 6 virtual coins -->
+        <div class="coin-tester" onclick="flipVirtualCoins()" title="Click to flip coins">
+            <!-- Initial state showing faces (💲) and crosses (🦅) -->
+            <div class="vcoin" id="vcoin1">💲</div>
+            <div class="vcoin" id="vcoin2">🦅</div>
+            <div class="vcoin" id="vcoin3">💲</div>
+            <div class="vcoin" id="vcoin4">🦅</div>
+            <div class="vcoin" id="vcoin5">💲</div>
+            <div class="vcoin" id="vcoin6">🦅</div>
+        </div>
+        <!-- Hat to draw random BIP39 words -->
+        <div class="hat-tester" onclick="drawVirtualWord()" title="Click to draw a random word">
+            <div class="hat-icon">🎩</div>
+            <div class="paper-slip" id="vword-slip">???</div>
+        </div>
+    </div>
 
     <script>
         // --- 1. BASE SYSTEM & VIRTUAL SD ---
@@ -2393,6 +2586,94 @@
                 wordlist = (localStorage.getItem('seedmate_bip39') || "").split(',');
                 render();
             });
+
+        function rollVirtualDice() {
+            const faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+            let rolls = 0;
+            
+            let rollInterval = setInterval(() => {
+                document.getElementById('vdice1').innerText = faces[Math.floor(Math.random() * 6)];
+                document.getElementById('vdice2').innerText = faces[Math.floor(Math.random() * 6)];
+                document.getElementById('vdice3').innerText = faces[Math.floor(Math.random() * 6)];
+                document.getElementById('vdice4').innerText = faces[Math.floor(Math.random() * 6)];
+                rolls++;
+                
+                if (rolls > 10) clearInterval(rollInterval);
+            }, 40);
+        }
+
+        // Function to simulate a coin flip animation
+        function flipVirtualCoins() {
+            // Array containing the face and cross icons
+            const faces = ['💲', '🦅']; 
+            
+            let flips = 0;
+            
+            // Rapidly change the icons to create a flipping effect
+            let flipInterval = setInterval(() => {
+                for(let i = 1; i <= 6; i++) {
+                    document.getElementById('vcoin' + i).innerText = faces[Math.floor(Math.random() * 2)];
+                }
+                flips++;
+                
+                // Stop the animation after 10 iterations
+                if (flips > 10) clearInterval(flipInterval);
+            }, 40);
+        }
+
+        function drawVirtualCard() {
+            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
+            const suits = [
+                { symbol: '♣', color: 'suit-black' }, 
+                { symbol: '♦', color: 'suit-red' },   
+                { symbol: '♥', color: 'suit-red' },   
+                { symbol: '♠', color: 'suit-black' }  
+            ];
+            
+            let draws = 0;
+            const rankEl = document.getElementById('vcard-rank');
+            const suitEl = document.getElementById('vcard-suit');
+
+            // Card animation 
+            let drawInterval = setInterval(() => {
+                let randomRank = ranks[Math.floor(Math.random() * ranks.length)];
+                let randomSuit = suits[Math.floor(Math.random() * suits.length)];
+                
+                rankEl.innerText = randomRank;
+                suitEl.innerText = randomSuit.symbol;
+                
+                // Aply color
+                rankEl.className = 'vcard-text ' + randomSuit.color;
+                suitEl.className = 'vcard-text ' + randomSuit.color;
+                
+                draws++;
+                if (draws > 10) clearInterval(drawInterval);
+            }, 40);
+        }
+        // Function to simulate drawing a random BIP39 word from a hat
+        function drawVirtualWord() {
+            const slipEl = document.getElementById('vword-slip');
+            
+            // Safety check: ensure the BIP39 wordlist is loaded from GitHub/localStorage
+            if (!wordlist || wordlist.length === 0) {
+                slipEl.innerText = "LOADING";
+                return;
+            }
+
+            let draws = 0;
+            
+            // Rapidly shuffle through words to create a drawing effect
+            let drawInterval = setInterval(() => {
+                // Select a random index between 0 and 2047
+                let randomIndex = Math.floor(Math.random() * wordlist.length);
+                slipEl.innerText = wordlist[randomIndex];
+                
+                draws++;
+                
+                // Stop the animation after 12 iterations
+                if (draws > 12) clearInterval(drawInterval);
+            }, 40);
+        }
     </script>
 </body>
 </html>
