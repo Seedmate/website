@@ -184,7 +184,7 @@
         .device {
             width: 430px;
             height: 460px; 
-            flex-shrink: 0; /* FIX: Fuerza a mantener la altura de 420px intacta */
+            flex-shrink: 0;
             border-radius: 8px;
             background: var(--device);
             box-shadow: 0 30px 70px -20px rgba(0,0,0,.65),
@@ -281,6 +281,26 @@
             color: #fff;
             font-family: monospace;
             opacity: 0.6;
+        }
+
+        .start-hint {
+            position: absolute;
+            left: 55px; 
+            top: 1px;
+            color: var(--orange);
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            pointer-events: none;
+            animation: bouncePoint 0.8s infinite alternate ease-in-out;
+            text-shadow: 0px 2px 4px rgba(0,0,0,0.8);
+            z-index: 20;
+        }
+
+        @keyframes bouncePoint {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(8px); }
         }
 
         /* Keypad */
@@ -509,14 +529,14 @@
            SIMULATOR WARNING
            ============================================================ */
         .simulator-warning {
-            background: rgba(214, 40, 40, 0.1); /* Fondo rojizo translúcido */
-            border: 1px solid #D62828; /* Borde rojo alerta */
+            background: rgba(214, 40, 40, 0.1);
+            border: 1px solid #D62828; 
             border-radius: 6px;
             padding: 12px 20px;
             margin-bottom: 30px;
             text-align: center;
             width: 100%;
-            max-width: 430px; /* Mismo ancho que el dispositivo */
+            max-width: 430px; 
             display: flex;
             flex-direction: column;
             gap: 6px;
@@ -583,6 +603,7 @@
             
             <div class="bottom-area">
                 <div class="power-switch-container">
+                    <div id="startHint" class="start-hint">👈 Start here</div>
                     <div class="power-switch" id="powerBtn">
                         <div class="power-label">OFF/ON</div>
                     </div>
@@ -729,7 +750,7 @@
         lastUserWordDetails = {};
         finalByteArray.fill(0); 
         
-        ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0, dice: 0, hash: 0, diceHashChar: 0, xor: 0, resource: 0, sss: 0 };
+        ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0, dice: 0, hash: 0, diceHashChar: 0, xor: 0, resource: 0, sss: 0, obfus: 0 };
         createMode = "";
         sdPage = 0;
         ioStatusMsg = "";
@@ -743,6 +764,9 @@
         cardFieldPtr = 0;
         cardHistoryStart = [];
         cardHistoryLen = [];
+        cardSequence = [];
+        cardDecksNeeded = 0;
+        cardViewPage = 0;
 
         bip85Size = 0;
         bip85Index = 0;
@@ -755,6 +779,12 @@
         kbWord = "";
         kbFoundWord = "";
         kbValidMask = Array(27).fill(true);
+
+        obfusCursor = 0;
+        obfusDirOp = 0;
+        obfusAmount = 1;
+        obfusXorWordIdx = 0;
+        capturingXorWord = false;
 
         // Clear Shamir Secret Sharing RAM
         sssK = 2; sssN = 9; selKN = 0; selectedShareId = 1; sharesLoaded = 0;
@@ -788,19 +818,22 @@
 
     // Power Switch Logic
     const powerBtn = document.getElementById('powerBtn');
+    const startHint = document.getElementById('startHint');
     powerBtn.addEventListener('click', () => {
         isPoweredOn = !isPoweredOn;
         if (isPoweredOn) {
             powerBtn.classList.add('on');
+            startHint.style.display = 'none';
             document.getElementById('led-bottom').classList.add('white-on');
-            document.getElementById('led-top').style.background = '#0C5C33';
+            //document.getElementById('led-top').style.background = '#0C5C33';
             machineState = STATES.INIT;
             render();
         } else {
             powerBtn.classList.remove('on');
+            startHint.style.display = 'block';
             document.getElementById('led-bottom').classList.remove('white-on');
-            document.getElementById('led-top').classList.remove('white-on');
-            document.getElementById('led-top').style.background = '#111';
+            //document.getElementById('led-top').classList.remove('white-on');
+            //document.getElementById('led-top').style.background = '#111';
             ctx.fillStyle = "#05130C";
             ctx.fillRect(0, 0, 320, 256);
             clearDeviceRAM();
@@ -1059,12 +1092,22 @@
     let cardFieldPtr = 0; 
     let cardHistoryStart = [];
     let cardHistoryLen = [];
+    let cardSequence = [];
+    let cardDecksNeeded = 0;
+    let cardViewPage = 0;
 
     let bip85Size = 0; 
     let bip85Index = 0;
     let bip85Cursor = 0;
 
     let tripleViewState = 0; 
+
+    // Obfuscation Variables
+    let obfusCursor = 0;
+    let obfusDirOp = 0; // 0=Left/Add, 1=Right/Sub
+    let obfusAmount = 1;
+    let obfusXorWordIdx = 0;
+    let capturingXorWord = false;
 
     // Shamir Variables
     let sssK = 2;
@@ -1103,6 +1146,42 @@
             entropyBits = entropyBits.slice(0, -lastInputLen || -1);
             lastInputLen = 0;
         }
+    }
+
+    async function applyObfuscation() {
+        if (ptrs.obfus === 0) { // CIRCULAR SHIFT
+            let shift = obfusAmount % targetBits;
+            if (obfusDirOp === 0) { // Left Shift
+                entropyBits = entropyBits.substring(shift) + entropyBits.substring(0, shift);
+            } else { // Right Shift
+                entropyBits = entropyBits.substring(targetBits - shift) + entropyBits.substring(0, targetBits - shift);
+            }
+        } else if (ptrs.obfus === 1) { // NOT OPERATOR
+            entropyBits = entropyBits.split('').map(b => b === '1' ? '0' : '1').join('');
+        } else if (ptrs.obfus === 2) { // WORDS ADD/SUB
+            let newEntropy = "";
+            let groupBits = "";
+            for (let i = 0; i < targetBits; i++) {
+                groupBits += entropyBits[i];
+                if (groupBits.length === 11) {
+                    let val = parseInt(groupBits, 2);
+                    if (obfusDirOp === 0) val = (val + obfusAmount) % 2048; // Add
+                    else val = (val - obfusAmount + 2048 * Math.ceil(obfusAmount/2048)) % 2048; // Sub
+                    newEntropy += val.toString(2).padStart(11, '0');
+                    groupBits = "";
+                }
+            }
+            newEntropy += groupBits; // Append unmodified trailing bits
+            entropyBits = newEntropy;
+        } else if (ptrs.obfus === 3) { // 1 WORD XOR
+            let maskStr = obfusXorWordIdx.toString(2).padStart(11, '0').repeat(Math.ceil(targetBits / 11)).substring(0, targetBits);
+            let newEntropy = "";
+            for (let i = 0; i < targetBits; i++) {
+                newEntropy += (entropyBits[i] === maskStr[i]) ? '0' : '1';
+            }
+            entropyBits = newEntropy;
+        }
+        await generateFinalSeed();
     }
 
     async function generateFinalSeed() {
@@ -1304,6 +1383,75 @@
             entropyBits += finalByteArray[i].toString(2).padStart(8, '0');
         }
         await generateFinalSeed();
+    }
+
+    function calculateCardEncoding() {
+        let totalBits = targetBits;
+        let currentBeams = [{ bitOffset: 0, score: 0, usage: Array(52).fill(0), seq: [], maxUsage: 0 }];
+        let nextBeams = [];
+        const BEAM_WIDTH = 8;
+        let allPathsDone = false;
+
+        function getCard(offset, len) {
+            let val = parseInt(entropyBits.substring(offset, offset + len), 2);
+            if (len === 5) return val;
+            if (len === 4) return 32 + val;
+            return 48 + val;
+        }
+
+        while (!allPathsDone) {
+            allPathsDone = true;
+            let maxInserted = 0;
+            nextBeams = [];
+            
+            for (let i = 0; i < currentBeams.length; i++) {
+                let curr = currentBeams[i];
+                
+                if (curr.bitOffset >= totalBits) {
+                    nextBeams.push(curr);
+                    continue;
+                }
+                
+                allPathsDone = false;
+                let rem = totalBits - curr.bitOffset;
+                let lengths = [5, 4, 2];
+                
+                for (let j = 0; j < 3; j++) {
+                    let len = lengths[j];
+                    
+                    if (rem >= len && (rem - len !== 1) && (rem - len !== 3)) {
+                        let cand = {
+                            bitOffset: curr.bitOffset + len,
+                            usage: [...curr.usage],
+                            seq: [...curr.seq],
+                            maxUsage: curr.maxUsage
+                        };
+                        
+                        let card = getCard(curr.bitOffset, len);
+                        cand.usage[card]++;
+                        
+                        if (cand.usage[card] > cand.maxUsage) {
+                            cand.maxUsage = cand.usage[card];
+                        }
+                        
+                        cand.seq.push(card);
+                        cand.score = (cand.maxUsage << 8) + cand.seq.length;
+                        
+                        nextBeams.push(cand);
+                    }
+                }
+            }
+            
+            if (allPathsDone) break;
+            
+            nextBeams.sort((a, b) => a.score - b.score);
+            currentBeams = nextBeams.slice(0, BEAM_WIDTH);
+        }
+        
+        let bestPath = currentBeams[0];
+        cardSequence = bestPath.seq;
+        cardDecksNeeded = bestPath.maxUsage;
+        cardViewPage = 0;
     }
 
     function kbUpdateValidLetters() {
@@ -1555,11 +1703,12 @@
         PROCESS_TRIPLE: 18, SHOW_TRIPLE_CHKSUM_12: 19, SHOW_TRIPLE_CHKSUM_24: 20,
         CHILD_CONFIG: 21, PROCESS_BIP85: 22, WRITE_WORD: 23, WORD_LIST_ERROR: 24,
         SEL_XOR: 25, SD_READ_XOR: 26, RESOURCE_MENU: 27, RESOURCE_QR_VIEW: 28,
-        SEL_SSS: 29, SEL_KN: 30, SEL_K: 31, SEL_SHARE: 32, SD_READ_MERGE: 33
+        SEL_SSS: 29, SEL_KN: 30, SEL_K: 31, SEL_SHARE: 32, SD_READ_MERGE: 33,
+        SEL_OBFUS: 34, OBFUS_CONFIG: 35, OBFUS_QR_VIEW: 36, SHOW_CARD_ENCODING: 37
     };
 
     // Global pointer object storing menu navigation indexes
-    let ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0, dice: 0, hash: 0, diceHashChar: 0, xor: 0, resource: 0, sss: 0 };
+    let ptrs = { main: 0, create: 0, size: 0, sd: 0, input: 0, dice: 0, hash: 0, diceHashChar: 0, xor: 0, resource: 0, sss: 0, obfus: 0 };
 
     let xorMergeWordsAvailable = 0;
     let xorMergeWord1 = new Uint8Array(32);
@@ -1701,10 +1850,42 @@
                 drawMenu(menu_xor, ptrs.xor, false); 
                 break;                    
 
+            case STATES.SEL_OBFUS:
+                drawMenu(menu_obfus, ptrs.obfus, false);
+                break;
+            
+            case STATES.OBFUS_CONFIG:
+                drawtext(1, 10, "Operation:", "white");
+                drawtext(100, 10, "Amount:", "white");
+
+                let opColor = (obfusCursor === 0) ? "orange" : "white";
+                let amtColor = (obfusCursor === 1) ? "orange" : "white";
+
+                let opStr = "";
+                if (ptrs.obfus === 0) opStr = (obfusDirOp === 0) ? "LEFT SHIFT " : "RIGHT SHIFT";
+                else opStr = (obfusDirOp === 0) ? "ADD WORDS" : "SUB WORDS";
+
+                drawtext(10, 30, opStr, opColor);
+                drawtext(100, 30, obfusAmount.toString(), amtColor);
+
+                print_cursor_grid(); print_up_arrow(103, 114); print_down_arrow(103, 123);
+                print_left_arrow(73, 123); print_rigth_arrow(133, 123);
+                drawtext(130, 106, "OK", "white", null); drawtext(64, 106, "BACK", "white", null);
+                break;
+            
+            case STATES.OBFUS_QR_VIEW:
+                renderQR('URL', "seedmate.net/obfuscation.html");
+                break;
+
             case STATES.WRITE_WORD:
-                drawtext(1, 10, "WORD:", "white");
-                let suffix = (createMode === "XOR") ? String.fromCharCode(65 + xorMergeWordsAvailable) : "";
-                drawtext(35, 10, kbWordIdx.toString() + suffix + ".", "white");
+                if (capturingXorWord) {
+                    drawtext(1, 10, "XOR WORD:", "white");
+                } else {
+                    drawtext(1, 10, "WORD:", "white");
+                    let suffix = (createMode === "XOR") ? String.fromCharCode(65 + xorMergeWordsAvailable) : "";
+                    drawtext(35, 10, kbWordIdx.toString() + suffix + ".", "white");
+                }
+
                 if (kbWord.length > 0) drawtext(60, 10, kbWord, "white");
                 
                 if (kbFoundWord) {
@@ -1714,7 +1895,7 @@
                     drawtext(130, 60, "OK", "gray");
                 }
 
-                if (kbWordIdx > 1) {
+                if (!capturingXorWord && kbWordIdx > 1) {
                     let pBits = entropyBits.substring((kbWordIdx-2)*11, (kbWordIdx-1)*11);
                     let pIdx = parseInt(pBits, 2);
                     drawtext(45, 80, (kbWordIdx-1).toString() + ".", "green");
@@ -1891,6 +2072,36 @@
                     if (selectedShareId < sssN) print_down_arrow(80, 123);
                 }
                 break;
+            
+            case STATES.SHOW_CARD_ENCODING:
+                drawtext(1, 2, "MNEMONIC TO CARDS", "orange");
+                drawtext(1, 12, "DECKS NEEDED: " + cardDecksNeeded, "green");
+                
+                let cardsPerPage = 32;
+                let startIdx = cardViewPage * cardsPerPage;
+                let x = 5, y = 28;
+                
+                for (let i = startIdx; i < cardSequence.length && i < startIdx + cardsPerPage; i++) {
+                    let cardIdx = cardSequence[i];
+                    let rank = card_rank_chars[cardIdx % 13].toUpperCase();
+                    let suitIdx = Math.floor(cardIdx / 13);
+                    let suit = card_suit_chars[suitIdx].toUpperCase(); 
+                    
+                    let color = "white";
+                    if (suitIdx === 1 || suitIdx === 2) color = "red";
+                    
+                    drawtext(x, y, rank + suit, color);
+                    x += 20;
+                    if (x > 145) {
+                        x = 5;
+                        y += 18;
+                    }
+                }
+                
+                if (cardViewPage > 0) print_up_arrow(72, 123);
+                if (startIdx + cardsPerPage < cardSequence.length) print_down_arrow(80, 123);
+                print_left_arrow(5, 123);
+                break;
 
             case STATES.QR_STD: renderQR('STANDARD'); break;
             case STATES.QR_CMPCT: renderQR('COMPACT'); break;
@@ -2042,6 +2253,8 @@
                 else if (ptrs.main === 2) { machineState = STATES.CHILD_CONFIG; bip85Cursor = 0; bip85Size = 0; bip85Index = 0; }
                 else if (ptrs.main === 3) { machineState = STATES.SEL_SSS; ptrs.sss = 0; }
                 else if (ptrs.main === 4) { machineState = STATES.SEL_XOR; ptrs.xor = 0; }
+                else if (ptrs.main === 5) { machineState = STATES.SEL_OBFUS; ptrs.obfus = 0; }
+                else if (ptrs.main === 6) { machineState = STATES.SEL_INPUT; ptrs.input = 0; createMode = "MNEM2CARD"; }
                 else if (ptrs.main === 7) { machineState = STATES.SD_ERASE; ptrs.sd = 0; sdPage = 0; ioStatusMsg = ""; lastIoSlot = -1; }
                 else if (ptrs.main === 8) { machineState = STATES.RESOURCE_MENU; ptrs.resource = 0; }
             }
@@ -2151,6 +2364,7 @@
                 else if (createMode === "XOR") machineState = STATES.SEL_XOR;
                 else if (createMode === "SSS_SPLIT") machineState = STATES.SEL_KN;
                 else if (createMode === "SSS_MERGE") machineState = STATES.SEL_K;
+                else if (createMode === "OBFUS") machineState = STATES.SEL_OBFUS;
                 else machineState = STATES.MAIN;
             }
             if (btn === 'OK') {
@@ -2160,7 +2374,7 @@
                         selectedShareId = 1;
                         machineState = STATES.SEL_SHARE;
                     } else {
-                        machineState = (createMode === "TRIPLE" || createMode === "BIP85") ? STATES.WRITE_WORD : STATES.SIZE; 
+                        machineState = (createMode === "TRIPLE" || createMode === "BIP85" || createMode === "OBFUS" || createMode === "MNEM2CARD") ? STATES.WRITE_WORD : STATES.SIZE; 
                         kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
                     }
                 }
@@ -2249,8 +2463,14 @@
                     kbUpdateValidLetters();
                     kbCharIdx = 0;
                 } else {
-                    if (createMode === "SSS_MERGE") machineState = STATES.SEL_SHARE;
-                    else machineState = STATES.SEL_INPUT;
+                    if (capturingXorWord) {
+                        capturingXorWord = false;
+                        machineState = STATES.SEL_OBFUS;
+                    } else if (createMode === "SSS_MERGE") {
+                        machineState = STATES.SEL_SHARE;
+                    } else {
+                        machineState = STATES.SEL_INPUT;
+                    }
                 }
             }
             else if (btn === 'OK') {
@@ -2275,6 +2495,15 @@
                         let wordIndex = wordlist.indexOf(wordToUse.toLowerCase());
                         if (wordIndex === -1) return; // Prevent invalid index errors
                         
+                        if (capturingXorWord) {
+                            obfusXorWordIdx = wordIndex;
+                            capturingXorWord = false;
+                            kbWord = "";
+                            machineState = STATES.SEL_INPUT;
+                            ptrs.input = 0;
+                            return;
+                        }
+
                         let targetWords = (targetBits === 256) ? 24 : 12;
                         let checksumLen = targetBits === 128 ? 4 : 8;
                         let entropyPartLen = 11 - checksumLen;
@@ -2311,7 +2540,7 @@
                             kbCharIdx = 0;
                             kbWordIdx++;
                         } else {
-                            // --- VALIDATION MODE FOR THE LAST WORD (LOAD / BIP85 / TRIPLE / SSS) ---
+                            // --- VALIDATION MODE FOR THE LAST WORD (LOAD / BIP85 / TRIPLE / SSS / OBFUS / MNEM2CARD) ---
                             // Append the full 11 bits of the final word before doing validation
                             entropyBits += wordIndex.toString(2).padStart(11, '0');
                             if (createMode === "TRIPLE") {
@@ -2362,16 +2591,25 @@
                                 // Validate checksum
                                 if (expectedChk === userChk) {
                                     for(let i=0; i<reqEntropyBytes; i++) finalByteArray[i] = eBytes[i];
+                                    
+                                    // Remove the user checksum from entropyBits so only pure entropy is left, then let generateFinalSeed handle the rest
+                                    entropyBits = entropyBits.substring(0, targetBits);
                                     await generateFinalSeed(); 
                                     
-                                    // Check if we were loading a seed specifically to generate a BIP85 child
+                                    // Check if we were loading a seed specifically for advanced generation
                                     if (createMode === "BIP85") {
                                         machineState = STATES.PROCESS_BIP85;
                                         await processBIP85();
                                         machineState = STATES.SHOW_SEED;
+                                    } else if (createMode === "OBFUS") {
+                                        await applyObfuscation();
+                                        machineState = STATES.SHOW_SEED;
                                     } else if (createMode === "SSS_SPLIT") {
                                         await executeSplit();
                                         machineState = STATES.SHOW_SEED;
+                                    } else if (createMode === "MNEM2CARD") {
+                                        calculateCardEncoding();
+                                        machineState = STATES.SHOW_CARD_ENCODING;
                                     } else if (createMode === "XOR") {
                                         if (xorMergeWordsAvailable <= ptrs.xor) {
                                             if (xorMergeWordsAvailable === 0) xorMergeWord1.set(finalByteArray);
@@ -2596,11 +2834,65 @@
             if (btn === 'OK') machineState = STATES.QR_STD;
             if (btn === 'RIGHT') machineState = STATES.QR_CMPCT; 
         }
+        else if (machineState === STATES.SHOW_CARD_ENCODING) {
+            if (btn === 'UP' && cardViewPage > 0) {
+                cardViewPage--;
+            }
+            if (btn === 'DOWN' && (cardViewPage + 1) * 32 < cardSequence.length) {
+                cardViewPage++;
+            }
+            if (btn === 'BACK' || btn === 'LEFT') {
+                machineState = STATES.SEL_INPUT;
+            }
+        }
         else if (machineState === STATES.SEL_XOR) {
             if (btn === 'DOWN' && ptrs.xor < menu_xor.length - 1) ptrs.xor++;
             if (btn === 'UP' && ptrs.xor > 0) ptrs.xor--;
             if (btn === 'BACK') machineState = STATES.MAIN;
             if (btn === 'OK') { createMode = "XOR"; machineState = STATES.SEL_INPUT; ptrs.input = 0; }
+        }
+        else if (machineState === STATES.SEL_OBFUS) {
+            if (btn === 'DOWN' && ptrs.obfus < menu_obfus.length - 1) ptrs.obfus++;
+            if (btn === 'UP' && ptrs.obfus > 0) ptrs.obfus--;
+            if (btn === 'BACK') machineState = STATES.MAIN;
+            if (btn === 'OK') {
+                if (ptrs.obfus === 4) {
+                    machineState = STATES.OBFUS_QR_VIEW;
+                } else if (ptrs.obfus === 1) { // NOT OPERATOR
+                    createMode = "OBFUS";
+                    machineState = STATES.SEL_INPUT;
+                    ptrs.input = 0;
+                } else if (ptrs.obfus === 3) { // 1 WORD XOR
+                    createMode = "OBFUS";
+                    capturingXorWord = true;
+                    machineState = STATES.WRITE_WORD;
+                    kbWordIdx = 1; kbWord = ""; kbCharIdx = 0; kbUpdateValidLetters();
+                } else { // SHIFT or ADD/SUB
+                    obfusCursor = 0;
+                    machineState = STATES.OBFUS_CONFIG;
+                }
+            }
+        }
+        else if (machineState === STATES.OBFUS_CONFIG) {
+            if (btn === 'LEFT') obfusCursor = 0;
+            if (btn === 'RIGHT') obfusCursor = 1;
+            if (btn === 'UP') {
+                if (obfusCursor === 0) obfusDirOp = obfusDirOp === 0 ? 1 : 0;
+                else obfusAmount++;
+            }
+            if (btn === 'DOWN') {
+                if (obfusCursor === 0) obfusDirOp = obfusDirOp === 0 ? 1 : 0;
+                else if (obfusAmount > 1) obfusAmount--;
+            }
+            if (btn === 'BACK') machineState = STATES.SEL_OBFUS;
+            if (btn === 'OK') {
+                createMode = "OBFUS";
+                machineState = STATES.SEL_INPUT;
+                ptrs.input = 0;
+            }
+        }
+        else if (machineState === STATES.OBFUS_QR_VIEW) {
+            if (btn === 'BACK' || btn === 'LEFT') machineState = STATES.SEL_OBFUS;
         }
         else if (machineState === STATES.QR_STD || machineState === STATES.QR_CMPCT) {
             if (btn === 'BACK' || btn === 'LEFT') machineState = STATES.SHOW_SEED;
@@ -2658,12 +2950,18 @@
                             drawtext(50, 65, "MNEMONIC...", "white");
                             await processBIP85();
                             machineState = STATES.SHOW_SEED;
+                        } else if (createMode === "OBFUS") {
+                            await applyObfuscation();
+                            machineState = STATES.SHOW_SEED;
                         } else if (createMode === "TRIPLE") {
                             await processTripleMnemonic();
                             machineState = STATES.SHOW_TRIPLE_CHKSUM_12;
                         } else if (createMode === "SSS_SPLIT") {
                             await executeSplit();
                             machineState = STATES.SHOW_SEED;
+                        } else if (createMode === "MNEM2CARD") {
+                            calculateCardEncoding();
+                            machineState = STATES.SHOW_CARD_ENCODING;
                         } else {
                             machineState = STATES.SHOW_SEED;
                         }
