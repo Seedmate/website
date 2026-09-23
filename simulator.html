@@ -51,6 +51,8 @@
           font-size: 19px;
           line-height: 1.6;
           font-optical-sizing: auto;
+          min-width: max-content;
+          width: 100%;
         }
         img { max-width: 100%; display: block; }
         a { color: inherit; }
@@ -81,6 +83,7 @@
         header{
           position:sticky;top:0;z-index:60;background:rgba(11,26,19,.92);
           backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.1);
+          min-width: 100%;
         }
         .bar{display:flex;align-items:center;gap:26px;height:66px;max-width:var(--maxw);margin:0 auto;padding:0 var(--pad)}
         .logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff;margin-right:auto}
@@ -108,12 +111,12 @@
         /* ============================================================
            FOOTER
            ============================================================ */
-        footer{background:var(--ink);color:rgba(234,241,236,.62);padding:clamp(48px,6vw,72px) 0 34px;font-size:16px}
+        footer{background:var(--ink);color:rgba(234,241,236,.62);padding:clamp(48px,6vw,72px) 0 34px;font-size:16px;min-width: max-content;}
         .foot-grid{  display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 2rem;
           width: 100%;
-          max-width: 1200px;
+          min-width: 100%;
           margin: 0 auto;
         }
         @media(max-width:760px){.foot-grid{grid-template-columns:1fr;gap:32px}}
@@ -139,15 +142,16 @@
             padding-bottom: 60px;
             user-select: none;
             
-            /* FIX: Permite el desplazamiento horizontal sin cortar el lado izquierdo en móviles */
-            min-width: max-content; 
+            min-width: 100%;
             padding-left: 20px; 
-            padding-right: 20px; 
+            padding-right: 80px; 
         }
 
         .device-wrapper {
             position: relative;
             z-index: 10;
+            flex-shrink: 0;
+            margin-right: 60px;
         }
 
         /* SD Card (Default inserted) */
@@ -179,7 +183,8 @@
         /* Main device casing */
         .device {
             width: 430px;
-            height: 420px; /* Enlarged upwards to give more space below screen */
+            height: 460px; 
+            flex-shrink: 0; /* FIX: Fuerza a mantener la altura de 420px intacta */
             border-radius: 8px;
             background: var(--device);
             box-shadow: 0 30px 70px -20px rgba(0,0,0,.65),
@@ -225,7 +230,7 @@
             align-items: center;
             padding: 0 10%;
             margin-top: auto;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             margin-left: 100px;
             box-sizing: border-box;
             gap: 40px;
@@ -499,6 +504,39 @@
             text-transform: uppercase; 
             letter-spacing: 1px;
         }
+
+        /* ============================================================
+           SIMULATOR WARNING
+           ============================================================ */
+        .simulator-warning {
+            background: rgba(214, 40, 40, 0.1); /* Fondo rojizo translúcido */
+            border: 1px solid #D62828; /* Borde rojo alerta */
+            border-radius: 6px;
+            padding: 12px 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            width: 100%;
+            max-width: 430px; /* Mismo ancho que el dispositivo */
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 15px rgba(214, 40, 40, 0.15);
+            z-index: 10;
+        }
+
+        .warning-title {
+            color: #D62828;
+            font-family: var(--mono, 'Martian Mono', monospace);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .warning-text {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 13px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -529,6 +567,12 @@
 </header>
 
 <main class="simulator-main">
+    <!-- SECURITY WARNING -->
+    <div class="simulator-warning">
+        <span class="warning-title">⚠️ FOR DEMONSTRATION PURPOSES ONLY</span>
+        <span class="warning-text">Do not enter real seed phrases on this or any web page. </span>
+        <span class="warning-text">The simulator's behavior may differ slightly from the actual air-gapped hardware.</span>
+    </div>
     <div class="device-wrapper">
         <div class="sd-card" id="sd-card" title="Drag up/down"></div>
         
