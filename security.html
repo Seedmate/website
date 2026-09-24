@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security Risks & Guidelines — Seedmate</title>
+<meta name="description" content="Essential OpSec rules and security guidelines to safely manage your cryptographic seeds with Seedmate.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EFEEE7;--paper-hi:#FBFAF6;--ink:#0B1A13;--ink-soft:#41544A;
+  --green:#15613C;--green-hi:#3FBF7F;--orange:#D6521C;
+  --rule:rgba(11,26,19,.14);--rule-strong:rgba(11,26,19,.3);
+  --mono:"Martian Mono",ui-monospace,Menlo,monospace;
+  --serif:"Newsreader",Georgia,serif;
+  --pad:clamp(20px,5vw,64px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:19px;line-height:1.62}
+h1,h2,h3,h4{font-family:var(--mono);font-weight:600;letter-spacing:-.045em;line-height:1.08;margin:0}
+a{color:var(--green)}
+p{margin:0 0 1.1em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--pad)}
+.reading{max-width:66ch;margin:0 auto;padding:0 var(--pad)}
+
+/* header (shared with home) */
+header{position:sticky;top:0;z-index:60;background:rgba(11,26,19,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.1)}
+.bar{display:flex;align-items:center;gap:26px;height:66px;max-width:1180px;margin:0 auto;padding:0 var(--pad)}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff;margin-right:auto}
+.logo b{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:-.05em}
+.logo svg{width:15px;height:19px}
+nav.main{display:flex;gap:24px}
+nav.main a{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.72);text-decoration:none;
+  padding:4px 0;border-bottom:1px solid transparent}
+nav.main a:hover{color:#fff;border-color:var(--green-hi)}
+.buy-mini{font-family:var(--mono);font-size:12px;font-weight:600;text-decoration:none;color:#04150D;
+  background:var(--green-hi);padding:9px 16px;border-radius:2px;white-space:nowrap}
+.menu-btn{display:none;background:none;border:0;padding:8px;cursor:pointer}
+.menu-btn span{display:block;width:22px;height:1.5px;background:#fff;margin:5px 0}
+@media(max-width:860px){
+  nav.main{position:fixed;inset:66px 0 auto;background:var(--ink);flex-direction:column;gap:0;
+    padding:8px var(--pad) 26px;display:none}
+  nav.main.open{display:flex}
+  nav.main a{padding:15px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.09)}
+  .menu-btn{display:block;order:3}
+}
+a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+
+/* page head */
+.page-head{background:var(--ink);color:#EAF1EC;padding:clamp(50px,7vw,86px) 0 clamp(44px,6vw,70px);
+  position:relative;overflow:hidden}
+.page-head::before{content:"";position:absolute;inset:0;opacity:.45;
+  background-image:linear-gradient(rgba(63,191,127,.09) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(63,191,127,.09) 1px,transparent 1px);background-size:34px 34px;
+  mask-image:radial-gradient(120% 90% at 60% 10%,#000 20%,transparent 76%)}
+.page-head .wrap{position:relative}
+.tag{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--green-hi);display:inline-flex;align-items:center;gap:.6em;margin-bottom:18px}
+.tag::before{content:"";width:22px;height:1px;background:currentColor}
+.page-head h1{font-size:clamp(36px,6vw,64px);color:#fff;letter-spacing:-.055em;margin-bottom:18px}
+.page-head p{color:rgba(234,241,236,.72);max-width:46ch;font-size:20px;margin:0}
+
+/* index of articles */
+.toc{border-bottom:1px solid var(--rule);background:var(--paper-hi)}
+.toc-inner{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule)}
+@media(max-width:820px){.toc-inner{grid-template-columns:1fr}}
+.toc a{background:var(--paper-hi);padding:26px var(--pad);text-decoration:none;color:var(--ink);display:block}
+.toc a:hover{background:#fff}
+.toc time{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--ink-soft);display:block;margin-bottom:10px}
+.toc h3{font-size:19px}
+
+/* article */
+article{padding:clamp(52px,7vw,92px) 0;border-bottom:1px solid var(--rule)}
+article time{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--ink-soft);
+  display:block;margin-bottom:16px}
+article h2{font-size:clamp(30px,4.6vw,48px);margin-bottom:22px}
+article h3{font-size:clamp(20px,2.6vw,26px);margin:44px 0 16px;color:var(--green)}
+article h4{font-family:var(--mono);font-size:13px;letter-spacing:.06em;margin:32px 0 12px}
+article ul,article ol{padding-left:1.15em;margin:0 0 1.2em}
+article li{margin-bottom:.5em}
+.lead{font-size:22px;line-height:1.5;color:var(--ink);border-left:2px solid var(--green);
+  padding-left:22px;margin-bottom:34px}
+code{font-family:var(--mono);font-size:.8em;background:rgba(21,97,60,.1);color:var(--green);
+  padding:2px 6px;border-radius:2px}
+.calc{font-family:var(--mono);font-size:14px;line-height:2;background:var(--ink);color:#EAF1EC;
+  padding:22px 24px;border-radius:3px;margin:0 0 1.4em;overflow-x:auto;white-space:pre}
+.calc b{color:var(--green-hi);font-weight:600}
+.callout{border:1px solid var(--rule-strong);border-left:3px solid var(--orange);background:var(--paper-hi);
+  padding:22px 24px;margin:0 0 1.4em}
+.callout p:last-child{margin-bottom:0}
+.callout strong{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--orange);display:block;margin-bottom:8px}
+.check{list-style:none;padding:0;counter-reset:cp}
+.check > li{counter-increment:cp;border-top:1px solid var(--rule);padding:28px 0 8px}
+.check > li::before{content:"CHECKPOINT " counter(cp);font-family:var(--mono);font-size:11px;
+  letter-spacing:.18em;color:var(--orange);display:block;margin-bottom:10px}
+.check > li > h3{margin-top:0}
+
+/* cta */
+.cta{background:var(--ink);color:#EAF1EC;padding:clamp(50px,7vw,84px) 0;text-align:center}
+.cta h2{color:#fff;font-size:clamp(26px,4vw,40px);margin-bottom:14px}
+.cta p{color:rgba(234,241,236,.7);max-width:44ch;margin:0 auto 28px}
+.btn{font-family:var(--mono);font-size:13px;font-weight:600;display:inline-flex;padding:15px 26px;
+  border-radius:2px;background:var(--green-hi);color:#04150D;text-decoration:none;border:1px solid var(--green-hi)}
+.btn:hover{box-shadow:4px 4px 0 rgba(255,255,255,.3)}
+
+footer{background:var(--ink);color:rgba(234,241,236,.45);padding:34px 0;
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:rgba(234,241,236,.7);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="logo" href="index.html">
+      <svg viewBox="0 0 16 20" fill="none" aria-hidden="true">
+        <rect x="1" y="8" width="14" height="11" rx="2" fill="#3FBF7F"/>
+        <path d="M4 8V5a4 4 0 0 1 8 0v3" stroke="#3FBF7F" stroke-width="2"/>
+        <circle cx="8" cy="13.5" r="1.6" fill="#0B1A13"/>
+      </svg>
+      <b>SEEDMATE</b>
+    </a>
+    <nav class="main" id="nav">
+      <a href="index.html#what">What it is</a>
+      <a href="index.html#capabilities">Capabilities</a>
+      <a href="index.html#schemes">Recovery schemes</a>
+      <a href="index.html#specs">Specs</a>
+      <a href="blog.html">Guides</a>
+      <a href="simulator.html">Simulator</a>
+    </nav>
+    <a class="buy-mini" href="index.html#buy">Buy · €49</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="page-head">
+  <div class="wrap">
+    <span class="tag">Security</span>
+    <h1>Security Risks & Guidelines</h1>
+    <p>Essential OpSec rules to protect your seed.</p>
+  </div>
+</div>
+
+<article>
+  <div class="reading">
+    <p class="lead">Seedmate is designed with a strict air-gapped and stateless architecture to provide a highly secure environment for managing cryptographic seeds. But the users must be aware of the following risks:</p>
+
+    <h3>1. Breaking the Air-Gap (Cameras & Smartphones)</h3>
+    <p>Seedmate is a 100% offline device. However, taking a photograph of the device screen (words or QR codes) with a smartphone instantly compromises the seed. Smartphones routinely sync photos to cloud backups (iCloud, Google Photos) and grant gallery access to third-party apps. Users are strictly instructed never to photograph, scan with an online device, or type their seed into a computer or mobile keyboard.</p>
+
+    <h3>2. SD Physical access</h3>
+    <p>If you choose to export and keep your seed to the SD card, it will NOT be cryptographically encrypted. A basic obfuscation is used solely to prevent accidental plain-text reads by common operating systems (Windows/macOS).</p>
+    <p>However, a tech-savvy attacker with physical access to the SD card could use a hex editor, de-obfuscate and extract the base seed. The physical SD card must be treated with the exact same security as a paper/metal backup.</p>
+    <div class="callout">
+      <strong>OpSec Best Practice</strong>
+      <p>Never store the MicroSD card and the Seedmate device together. An unformatted SD card stored on its own looks like a corrupted or broken drive. However, an SD card stored next to a Seedmate device immediately gives an attacker the context they need to realize it holds raw cryptographic data. Do not label the SD card with clues about its contents.</p>
+    </div>
+
+    <h3>3. "Erased" Does Not Mean Destroyed (SD Card Memory) </h3>
+    <p>Due to how modern SD cards physically manage memory, it is impossible for Seedmate to guarantee the physical destruction of your data when you "erase" or overwrite the card.</p>
+    <p>But don't panic, an erased seed cannot be recovered by simply plugging the card into a computer, not even with the most advanced software available. It would require the use of advanced laboratory techniques, a process called off-chip recovery. An attacker would have to make a significant upfront investment to hire services from a professional data recovery company, which would only make sense if they know what is inside. Therefore, avoid labeling the card and always keep it separate from the device.</p>
+    <p>Of course, if you want to make sure no one will ever access the residual SD seed, just physically destroy it with a drill or scissors.</p>
+    <div class="callout">
+      <strong>The Silver Lining</strong>
+      <p>If you ever lose your seed copies but still have the wiped SD card, you could potentially use these professional off-chip recovery procedures yourself to try to retrieve it, but with no guarantees.</p>
+    </div>
+
+    <h3>4. Custom Cryptography & HTML Recovery Tool Risks</h3>
+    <p>Seedmate offers custom obfuscation and Shamir's Secret Sharing (SSS) implementations that are not compatible with other industry standard hardware wallets (such as SLIP-39). If the physical Seedmate device is lost or destroyed, these specific shares or obfuscated data cannot be imported directly into third-party devices.</p>
+    <p>To mitigate this, an open-source HTML recovery tool is provided as a last resort. This file is published on github and should always be online. But if you choose to use Shamir/Obfuscation you should consider the following steps:</p>
+    <ul>
+      <li>Download the open-source HTML recovery tool today. Keep a digital copy on a standard USB drive, PC and/or cloud service provider, just in case GitHub is ever offline in the future.</li>
+      <li>Practice the recovery steps in advance with a dummy seed: download the HTML file, transfer it via USB, and execute it on a secure, permanently offline computer or a live amnesic operating system (such as Tails OS).</li>
+    </ul>
+
+    <h3>5. Physical Tampering & ICSP (Evil Maid/Supply Chain Attacks)</h3>
+    <p>Seedmate is completely stateless and stores no secrets in its internal non-volatile memory (Flash). However, the ICSP programming pins remain accessible under the case to allow users to verify and update the open-source firmware. Because of this, an attacker with physical access to the device could flash a malicious firmware. Given the small size of the project this risk is close to zero at this moment. I plan to implement SD firmware updates and firmware verification processes in the future.</p>
+  </div>
+</article>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
+    <span><a href="index.html">SEEDMATE.NET</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var mb = document.getElementById('menuBtn'), nav = document.getElementById('nav');
+  mb.addEventListener('click', function(){
+    var open = nav.classList.toggle('open');
+    mb.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+})();
+</script>
+</body>
+</html>
