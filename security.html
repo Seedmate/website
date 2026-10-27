@@ -166,12 +166,20 @@ footer a{color:rgba(234,241,236,.7);text-decoration:none}
     </div>
 
     <h3>3. "Erased" Does Not Mean Destroyed (SD Card Memory) </h3>
-    <p>Due to how modern SD cards physically manage memory, it is impossible for Seedmate to guarantee the physical destruction of your data when you "erase" or overwrite the card.</p>
-    <p>But don't panic, an erased seed cannot be recovered by simply plugging the card into a computer, not even with the most advanced software available. It would require the use of advanced laboratory techniques, a process called off-chip recovery. An attacker would have to make a significant upfront investment to hire services from a professional data recovery company, which would only make sense if they know what is inside. Therefore, avoid labeling the card and always keep it separate from the device.</p>
+    <p>Due to how modern SD cards physically manage memory (wear-leveling), standard file erasure cannot guarantee the physical destruction of your data. This is why the secure wiping function was introduced.</p>
+
+    <p>But don't panic. Even a normally erased seed cannot be recovered by simply plugging the card into a computer, not even with the most advanced software available. It would require the use of advanced laboratory techniques called off-chip recovery. An attacker would need to make a significant upfront investment to hire a professional data recovery company, which only makes sense if they know what the card holds. Therefore, avoid labeling the card and always keep it separate from the Seedmate device.</p>
+
     <p>Of course, if you want to make sure no one will ever access the residual SD seed, just physically destroy it with a drill or scissors.</p>
+
+<div class="callout">
+      <strong>SD Wipe function</strong>
+      <p>Starting with v1.8, Seedmate implements a secure SD card wiping function to provide data destruction capabilities. It overwrites SD blocks in a loop (until the user stops it). This process may take tens of minutes or even hours, depending on the card capacity. While it is impossible with normal read methods to verify wether the data has been physically destroyed, the probability of unrecoverable erasure is extremely high if the number of overwritten blocks exceeds the card's total capacity.</p>
+    </div>
+
     <div class="callout">
       <strong>The Silver Lining</strong>
-      <p>If you ever lose your seed copies but still have the wiped SD card, you could potentially use these professional off-chip recovery procedures yourself to try to retrieve it, but with no guarantees.</p>
+      <p>If you ever lose your seed backups but still have a normally erased SD card (not securely wiped), you could attempt to recover your seed using these professional off-chip recovery procedures, though success is not guaranteed.</p>
     </div>
 
     <h3>4. Custom Cryptography & HTML Recovery Tool Risks</h3>
