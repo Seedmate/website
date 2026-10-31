@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guides — Seedmate</title>
-<meta name="description" content="Self-custody guides from Seedmate: how to use seedXOR, Shamir over BIP39, Triple mnemonics, and a seven-point self-custody checklist.">
+<title>Obfuscation — Seedmate</title>
+<meta name="description" content="How Seedmate obfuscation works: circular shift, NOT, ADD/SUB and 1 word XOR. What each operation does to your seed, how to reverse it, and the risks of relying on it.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
@@ -65,14 +65,16 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-off
 .page-head h1{font-size:clamp(36px,6vw,64px);color:#fff;letter-spacing:-.055em;margin-bottom:18px}
 .page-head p{color:rgba(234,241,236,.72);max-width:46ch;font-size:20px;margin:0}
 
-/* index of articles */
+/* index of sections */
 .toc{border-bottom:1px solid var(--rule);background:var(--paper-hi)}
-.toc-inner{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule)}
-@media(max-width:820px){.toc-inner{grid-template-columns:1fr}}
-.toc a{background:var(--paper-hi);padding:26px var(--pad);text-decoration:none;color:var(--ink);display:block}
+.toc-inner{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule)}
+@media(max-width:980px){.toc-inner{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.toc-inner{grid-template-columns:1fr}}
+.toc a{background:var(--paper-hi);padding:24px var(--pad);text-decoration:none;color:var(--ink);display:block}
+@media(min-width:981px){.toc a{padding:24px 28px}}
 .toc a:hover{background:#fff}
 .toc time{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--ink-soft);display:block;margin-bottom:10px}
-.toc h3{font-size:19px}
+.toc h3{font-size:17px}
 
 /* article */
 article{padding:clamp(52px,7vw,92px) 0;border-bottom:1px solid var(--rule)}
@@ -90,6 +92,7 @@ code{font-family:var(--mono);font-size:.8em;background:rgba(21,97,60,.1);color:v
 .calc{font-family:var(--mono);font-size:14px;line-height:2;background:var(--ink);color:#EAF1EC;
   padding:22px 24px;border-radius:3px;margin:0 0 1.4em;overflow-x:auto;white-space:pre}
 .calc b{color:var(--green-hi);font-weight:600}
+.calc i{color:rgba(234,241,236,.5);font-style:normal}
 .callout{border:1px solid var(--rule-strong);border-left:3px solid var(--orange);background:var(--paper-hi);
   padding:22px 24px;margin:0 0 1.4em}
 .callout p:last-child{margin-bottom:0}
@@ -97,9 +100,28 @@ code{font-family:var(--mono);font-size:.8em;background:rgba(21,97,60,.1);color:v
   color:var(--orange);display:block;margin-bottom:8px}
 .check{list-style:none;padding:0;counter-reset:cp}
 .check > li{counter-increment:cp;border-top:1px solid var(--rule);padding:28px 0 8px}
-.check > li::before{content:"CHECKPOINT " counter(cp);font-family:var(--mono);font-size:11px;
+.check > li::before{content:"STEP " counter(cp);font-family:var(--mono);font-size:11px;
   letter-spacing:.18em;color:var(--orange);display:block;margin-bottom:10px}
-.check > li > h3{margin-top:0}
+.check > li > h4{margin-top:0}
+
+/* operation cards */
+.op{border-top:1px solid var(--rule-strong);padding-top:8px;margin-top:52px}
+.op .mark{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.2em;color:var(--orange);
+  display:block;margin-bottom:6px}
+.op h3{margin-top:0}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 1.4em;padding:16px 0;
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);font-size:17px}
+.facts dt{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-soft);padding-top:5px}
+.facts dd{margin:0}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;margin:0 0 1.4em}
+table{width:100%;border-collapse:collapse;font-size:16px}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-soft);border-bottom:1px solid var(--rule-strong)}
+td:first-child{font-family:var(--mono);font-size:13px;white-space:nowrap}
 
 /* cta */
 .cta{background:var(--ink);color:#EAF1EC;padding:clamp(50px,7vw,84px) 0;text-align:center}
@@ -108,11 +130,21 @@ code{font-family:var(--mono);font-size:.8em;background:rgba(21,97,60,.1);color:v
 .btn{font-family:var(--mono);font-size:13px;font-weight:600;display:inline-flex;padding:15px 26px;
   border-radius:2px;background:var(--green-hi);color:#04150D;text-decoration:none;border:1px solid var(--green-hi)}
 .btn:hover{box-shadow:4px 4px 0 rgba(255,255,255,.3)}
+.btn.ghost{background:transparent;color:#EAF1EC;border-color:rgba(234,241,236,.4);margin-left:10px}
+@media(max-width:520px){.btn.ghost{margin:12px 0 0}}
 
-footer{background:var(--ink);color:rgba(234,241,236,.45);padding:34px 0;
-  font-family:var(--mono);font-size:11px;letter-spacing:.08em}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-footer a{color:rgba(234,241,236,.7);text-decoration:none}
+/* footer (same as home) */
+footer{background:var(--ink);color:rgba(234,241,236,.62);padding:clamp(48px,6vw,72px) 0 34px;font-size:16px;
+  border-top:1px solid rgba(255,255,255,.08)}
+.foot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-bottom:40px}
+@media(max-width:760px){.foot-grid{grid-template-columns:1fr;gap:32px}}
+footer h4{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(234,241,236,.42);margin-bottom:16px;font-weight:400}
+footer a{color:rgba(234,241,236,.8);text-decoration:none;display:flex;align-items:center;gap:8px;padding:5px 0}
+footer a:hover{color:var(--green-hi)}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.12);padding-top:24px;
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:rgba(234,241,236,.4)}
 </style>
 </head>
 <body>
@@ -129,6 +161,7 @@ footer a{color:rgba(234,241,236,.7);text-decoration:none}
     </a>
     <nav class="main" id="nav">
       <a href="index.html#what">What it is</a>
+      <a href="index.html#why">Why</a>
       <a href="index.html#capabilities">Capabilities</a>
       <a href="index.html#schemes">Recovery schemes</a>
       <a href="index.html#specs">Specs</a>
@@ -147,17 +180,261 @@ footer a{color:rgba(234,241,236,.7);text-decoration:none}
   <div class="wrap">
     <span class="tag">How to</span>
     <h1>Obfuscation</h1>
-    <p>The art of hiding...</p>
+    <p>Backups that don't read as backups. What each operation does, how to undo it, and where it stops protecting you.</p>
   </div>
 </div>
 
+<nav class="toc" aria-label="On this page">
+  <div class="toc-inner">
+    <a href="#idea"><time>01</time><h3>The idea</h3></a>
+    <a href="#operations"><time>02</time><h3>The four operations</h3></a>
+    <a href="#risks"><time>03</time><h3>Risks</h3></a>
+    <a href="#howto"><time>04</time><h3>How to use it</h3></a>
+  </div>
+</nav>
 
+<!-- =========================== THE IDEA =========================== -->
+<article id="idea">
+  <div class="reading">
+    <time>01 · THE IDEA</time>
+    <h2>Hide the secret in plain sight</h2>
+    <p class="lead">Instead of storing your seed in clear text, you apply a reversible transformation to it and store the result. Whoever finds that backup holds a perfectly valid mnemonic. Just not yours.</p>
 
+    <p>Every operation in the <code>OBFUSCATION</code> menu works on the entropy of your seed (128 bits for 12 words, 256 bits for 24 words). After the operation Seedmate recalculates the checksum, so the output is always a standard BIP39 mnemonic of the same length. Any wallet will accept it, and it will open a real, empty wallet.</p>
+
+    <p>That is the whole trick. A list of 12 or 24 words found in a drawer looks like a seed, and it is a seed. Nothing tells the finder that there is one more step to reach your funds.</p>
+
+    <h3>Obfuscation is not encryption</h3>
+    <p>Read this twice. There is no key derivation and no cipher here. The security comes from two things only: the finder doesn't know the backup was transformed, and doesn't know which operation and which amount you used. This is a speed bump for someone who finds your paper by chance. It is not a wall against someone who knows what Seedmate is and is looking for your coins on purpose. More about this in <a href="#risks">Risks</a>.</p>
+
+    <h3>The canary</h3>
+    <p>Because the obfuscated seed is a valid wallet, you can put a small amount of sats on it. If those coins ever move, you know your physical backup has been found, and you have time to move your real funds before the finder works out the rest. Monitor it with a watch-only wallet (xpub only), never by importing the words into an online device.</p>
+
+    <div class="callout">
+      <strong>Sometimes simpler is better</strong>
+      <p>Obfuscation adds one more thing you have to remember. Before using it, ask yourself if a simpler trick covers your threat: a backup that nobody can find, or invisible ink. Complexity is also a way of losing funds.</p>
+    </div>
+  </div>
+</article>
+
+<!-- =========================== OPERATIONS =========================== -->
+<article id="operations">
+  <div class="reading">
+    <time>02 · THE FOUR OPERATIONS</time>
+    <h2>What each one does to your words</h2>
+    <p>All the examples below start from the same 12-word test seed, generated only for this page. <strong>Never put funds on a seed published on the internet</strong>, this one included.</p>
+
+<div class="calc"><i>original</i>
+city make pipe damp edge bundle
+chapter romance truck ranch alcohol cushion</div>
+
+    <!-- SHIFT -->
+    <div class="op">
+      <span class="mark">OPERATION 1</span>
+      <h3>Circular shift</h3>
+      <p>The entropy is treated as one long row of bits and rotated n positions to the left or to the right. The bits that fall out of one end come back in at the other end, so nothing is lost. Shifting a single bit is already enough to change every word:</p>
+<div class="calc"><i>original </i>  city make pipe damp edge bundle ...
+<i>left 1   </i>  <b>fancy artwork enhance hour milk develop ...</b>
+<i>left 2   </i>  <b>place bottom never syrup boil jungle ...</b></div>
+      <dl class="facts">
+        <dt>Settings</dt><dd>LEFT SHIFT or RIGHT SHIFT, amount n (1 or more)</dd>
+        <dt>To undo</dt><dd>Same amount, opposite direction. LEFT 7 is undone with RIGHT 7.</dd>
+        <dt>Combinations</dt><dd>127 different results for 12 words, 255 for 24 words. LEFT n is the same as RIGHT (128 − n) on 12 words, or RIGHT (256 − n) on 24 words.</dd>
+      </dl>
+      <div class="callout">
+        <strong>Amounts to avoid</strong>
+        <p><b>128</b> (12 words) or <b>256</b> (24 words) is a full turn: you get your original seed back. Avoid also <b>multiples of 11</b>: one word is 11 bits, so shifting 11 just moves your words one position and most of them stay readable, in a different order. Shifting 22 moves them two positions, and so on.</p>
+      </div>
+    </div>
+
+    <!-- NOT -->
+    <div class="op">
+      <span class="mark">OPERATION 2</span>
+      <h3>NOT operator</h3>
+      <p>Every bit of the entropy is inverted: ones become zeros and zeros become ones. In word terms, a word at position <code>i</code> of the BIP39 list goes to position <code>2047 − i</code>. The beginning of the list swaps with the end: <code>abandon</code> becomes <code>zoo</code>.</p>
+      <p>It is exactly the same as a seedXOR with the all-ones mnemonic <code>zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong</code> (for 24 words: 23 times <code>zoo</code> and <code>vote</code>), or a 1 word XOR with <code>zoo</code>. You can check it on any device that implements seedXOR.</p>
+<div class="calc"><i>original</i>  city make pipe damp edge bundle ...
+<i>NOT     </i>  <b>story just follow silver rifle ticket ...</b></div>
+      <dl class="facts">
+        <dt>Settings</dt><dd>None</dd>
+        <dt>To undo</dt><dd>Apply NOT again</dd>
+        <dt>Combinations</dt><dd>Only one</dd>
+      </dl>
+      <p>NOT is the simplest one and also the weakest. There is no number to remember, which is good, but there is also nothing secret: anyone who knows that Seedmate has a NOT button can try it in seconds. Use it only against people who don't know what they found.</p>
+    </div>
+
+    <!-- ADD/SUB -->
+    <div class="op">
+      <span class="mark">OPERATION 3</span>
+      <h3>Words ADD / SUB</h3>
+      <p>Every word moves n positions forward (ADD) or backward (SUB) in the BIP39 list. After <code>zoo</code> it starts again at <code>abandon</code>. With ADD 5, <code>city</code> (#331) becomes <code>claw</code> (#336), <code>make</code> (#1076) becomes <code>mango</code> (#1081), and so on:</p>
+<div class="calc"><i>original</i>  city make pipe damp edge bundle chapter romance ...
+<i>ADD 5   </i>  <b>claw mango planet daughter eight bus check rotate ...</b></div>
+      <p>The last word is a special case: it carries the checksum, so Seedmate recalculates it. Don't expect it to be exactly 5 positions away.</p>
+      <dl class="facts">
+        <dt>Settings</dt><dd>ADD WORDS or SUB WORDS, amount n (1 or more)</dd>
+        <dt>To undo</dt><dd>Same amount, opposite operation. ADD 5 is undone with SUB 5.</dd>
+        <dt>Combinations</dt><dd>2047 different results. 2048 is a full turn and gives your seed back, 2049 is the same as 1.</dd>
+      </dl>
+      <p>This is the easiest one to understand and to undo by hand: take the <a href="Printable BIP39 wordlist.pdf" target="_blank" rel="noopener noreferrer">printed wordlist</a> and count. That is also its weakness. With a small n the obfuscated words stay close to the originals in alphabetical order, and repeated words in your seed stay repeated. Pick an amount that is not small, not round and not a date.</p>
+    </div>
+
+    <!-- 1 WORD XOR -->
+    <div class="op">
+      <span class="mark">OPERATION 4</span>
+      <h3>1 word XOR</h3>
+      <p>You type one BIP39 word, the key word, and Seedmate XORs its 11 bits against every word of your seed. It's like seedXOR, but instead of a second full mnemonic the mask is the same word repeated.</p>
+<div class="calc"><i>original      </i>  city make pipe damp edge bundle ...
+<i>XOR "pizza"   </i>  <b>mimic case abstract myth token room ...</b></div>
+      <dl class="facts">
+        <dt>Settings</dt><dd>The key word</dd>
+        <dt>To undo</dt><dd>Apply 1 word XOR again with the same key word</dd>
+        <dt>Combinations</dt><dd>2047 different results</dd>
+      </dl>
+      <p>A word is easier to remember than a number, and you can hide it in a sentence, a book or a name. Two warnings: <code>abandon</code> is word #0, and XOR with zero changes nothing, so the output is your original seed. And as with ADD/SUB, words that repeat in your seed also repeat in the result.</p>
+    </div>
+
+    <h3>The inverse table</h3>
+    <p>Write this down together with your recovery instructions. Your future self, or your family, will need it.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>You applied</th><th>To recover, apply</th></tr></thead>
+        <tbody>
+          <tr><td>LEFT SHIFT n</td><td>RIGHT SHIFT n</td></tr>
+          <tr><td>RIGHT SHIFT n</td><td>LEFT SHIFT n</td></tr>
+          <tr><td>NOT</td><td>NOT</td></tr>
+          <tr><td>ADD WORDS n</td><td>SUB WORDS n</td></tr>
+          <tr><td>SUB WORDS n</td><td>ADD WORDS n</td></tr>
+          <tr><td>1 WORD XOR w</td><td>1 WORD XOR w</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Chaining operations</h4>
+    <p>The output of one operation can be the input of the next (save it to SD or type it again), for example LEFT 37, then ADD 1234, then XOR "pizza". To recover you undo them <b>in reverse order</b>: XOR "pizza", then SUB 1234, then RIGHT 37. Order matters, shift and add do not give the same result if you swap them. Chaining makes guessing harder, and it also makes forgetting easier. Remember that sometimes simpler is better.</p>
+  </div>
+</article>
+
+<!-- =========================== RISKS =========================== -->
+<article id="risks">
+  <div class="reading">
+    <time>03 · RISKS</time>
+    <h2>Where obfuscation stops protecting you</h2>
+    <p class="lead">Obfuscation trades one risk for another. Less risk of theft if the paper is found, more risk of loss if the recipe is forgotten. Understand both before you rely on it.</p>
+
+    <h3>1. It can be brute-forced</h3>
+    <p>Add up all the single operations: 127 or 255 shifts, 1 NOT, 2047 additions, 2047 XOR words. That's about 4,500 candidates. A computer goes through all of them, derives the addresses and checks the blockchain in minutes. Seedmate is open source and this page is public, so assume that an attacker who knows what Seedmate is will try exactly this.</p>
+    <p>Chaining two or three operations multiplies the number of candidates into the hundreds of millions. That's a lot for a person with a pen, but not for a motivated attacker with a GPU. If you need real cryptographic protection, use a strong passphrase or a split scheme (XOR, Shamir), not obfuscation alone.</p>
+
+    <h3>2. Forgetting the recipe means losing the funds</h3>
+    <p>The operation and its amount (or key word) are now part of your secret. If you forget that it was LEFT 37 and not RIGHT 37, or ADD 1234 and not ADD 1243, you hold a valid wallet with nothing in it. Write down the recipe and store it <b>separately</b> from the obfuscated words. The recipe without the words is useless, and the words without the recipe look like any other seed. Make sure the people who will inherit your coins can find both, together with the inverse table.</p>
+
+    <h3>3. It's not a standard</h3>
+    <p>No other wallet has these buttons. If your Seedmate is lost or broken, you need another way to reverse the operation:</p>
+    <ul>
+      <li>The free <a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">offline HTML tool</a> mirrors the functions of the device. Download it today and keep a copy, run it only on an air-gapped computer or a live OS like <a href="https://tails.net/" target="_blank" rel="noopener noreferrer">Tails</a>.</li>
+      <li>ADD/SUB, NOT and 1 word XOR can be undone by hand with the <a href="Binary_BIP39_wordlist.pdf" target="_blank" rel="noopener noreferrer">binary and decimal wordlist</a>, for all words except the last one. The last word carries the checksum, a wallet will tell you which candidate is valid.</li>
+      <li>The operations are simple enough that anyone, or your favorite AI model, can code a tool for them from the open source firmware. Test it with dummy seeds, then go offline to use it for real.</li>
+    </ul>
+
+    <h3>4. The decoy can work against you</h3>
+    <p>A funded canary wallet tells you that your backup was found. It also tells the finder that these words are a real seed that somebody cares about, and that maybe there's more to look for. Keep the canary amount small, and treat a moved canary as a real alarm: move your funds to a new seed, don't just top it up again.</p>
+
+    <h3>5. The usual suspects: SD card and screens</h3>
+    <p>While you obfuscate, the original seed is on the screen and maybe on the SD card. Same rules as always: no photos, no phones near the device, and wipe the SD card when you're done (<code>ERASE SD</code>). The SD card itself uses only a basic obfuscation, not encryption. See <a href="security.html">Security Risks &amp; Guidelines</a>.</p>
+  </div>
+</article>
+
+<!-- =========================== HOW TO =========================== -->
+<article id="howto">
+  <div class="reading">
+    <time>04 · HOW TO USE IT</time>
+    <h2>Obfuscate, then prove you can go back</h2>
+    <p>Never store an obfuscated backup that you haven't reversed at least once. Do the full round trip with a dummy seed first, then with your real one.</p>
+
+    <ol class="check">
+      <li>
+        <h4>Pick the operation</h4>
+        <p>In the main menu go to <code>OBFUSCATION</code> and choose <code>CIRCULAR SHIFT</code>, <code>NOT OPERATOR</code>, <code>WORDS ADD/SUB</code> or <code>1 WORD XOR</code>. <code>HOW TO</code> shows a QR code with the link to this page (scan it with the phone, it holds no secrets).</p>
+      </li>
+      <li>
+        <h4>Set it up</h4>
+        <p>For shift and ADD/SUB, the left field is the operation: UP/DOWN toggles LEFT/RIGHT or ADD/SUB. Press RIGHT to move to the amount, UP/DOWN to change it, OK to continue. For 1 word XOR, type the key word on the keyboard. NOT has no settings.</p>
+      </li>
+      <li>
+        <h4>Enter your seed</h4>
+        <p>Type it with the keyboard or load it from the SD card. Seedmate checks the checksum first: a seed with a typo is refused, it's never transformed.</p>
+      </li>
+      <li>
+        <h4>Check the result</h4>
+        <p>The obfuscated seed is shown as a new 12 or 24-word mnemonic. Make sure it doesn't look like your original (see <a href="#operations">amounts to avoid</a>).</p>
+      </li>
+      <li>
+        <h4>Do the round trip</h4>
+        <p>Enter the obfuscated seed again with the inverse operation from the table. You must get your original seed, every word. If you don't, stop and find out why before writing anything down.</p>
+      </li>
+      <li>
+        <h4>Store it</h4>
+        <p>Write down the obfuscated words in one place and the recipe in another. Fund the canary if you want one. Wipe the SD card and power off: Seedmate forgets everything.</p>
+      </li>
+    </ol>
+
+    <div class="callout">
+      <strong>Practice with the simulator</strong>
+      <p>You can try the full flow without the device in the <a href="simulator.html">simulator</a>. Use only dummy seeds there, it runs in your browser.</p>
+    </div>
+  </div>
+</article>
+
+<section class="cta">
+  <div class="wrap">
+    <h2>Learn the thing, then buy the tool</h2>
+    <p>Obfuscation works best combined with other strategies. Read how to build real recovery schemes with seedXOR and Shamir.</p>
+    <a class="btn" href="blog.html">Read the guides →</a><a class="btn ghost" href="security.html">Security guidelines</a>
+  </div>
+</section>
 
 <footer>
   <div class="wrap">
-    <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
-    <span><a href="index.html">SEEDMATE.NET</a></span>
+    <div class="foot-grid">
+      <div>
+        <h4>Product</h4>
+        <a href="index.html#buy">Buy — €49</a>
+        <a href="index.html#specs">Specs</a>
+        <a href="index.html#capabilities">Capabilities</a>
+        <a href="index.html#faq">FAQ</a>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <a href="https://github.com/Seedmate/Seedmate" target="_blank" rel="noopener noreferrer">Github repository</a>
+        <a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">Offline HTML tool</a>
+        <a href="simulator.html">Interactive Simulator</a>
+        <a href="Printable BIP39 wordlist.pdf" target="_blank" rel="noopener noreferrer">Printable BIP39 wordlist</a>
+        <a href="Binary_BIP39_wordlist.pdf" target="_blank" rel="noopener noreferrer">BIP39 wordlist binary and decimal</a>
+        <a href="FW_update.html">FW update procedure</a>
+        <a href="security.html">Security considerations</a>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <a href="mailto:support@seedmate.net">✉ E-mail</a>
+        <a href="https://x.com/@SeedMate_BTC" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          Seedmate_BTC
+        </a>
+        <a href="https://www.youtube.com/@SeedMate" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.070 0 12 0 12s0 3.930.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.930 24 12 24 12s0-3.930-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+          Youtube channel
+        </a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
+      <span>NOT FINANCIAL ADVICE · TEST YOUR BACKUPS TWICE A YEAR</span>
+    </div>
   </div>
 </footer>
 
