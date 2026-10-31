@@ -718,7 +718,7 @@ footer a:hover{color:var(--green-hi)}
     <div class="cell yes">
       <h3>What Seedmate is</h3>
       <p>A standalone BIP39 calculator you hold in your hand. It turns dice rolls, coin flips, playing cards or words picked by yourself into a valid mnemonic, displaying every detail for manual verification.</p>
-      <p>And much more: seedXOR, BIP85 child seeds, Shamir, Obfuscation, Triple mnemonics.</p>
+      <p>And much more: seedXOR, BIP85 child seeds, Shamir, <a href="obfuscation.html">Obfuscation</a>, Triple mnemonics.</p>
       <p style="margin:0">Stateless: nothing is stored. Power it off and the device is empty.</p>
     </div>
   </div>
@@ -816,13 +816,15 @@ footer a:hover{color:var(--green-hi)}
 
       <article class="cap rv">
         <span class="mark">OBFUSCATE</span>
-        <h3>Backups that don't read as backups</h3>
+        <h3><a href="obfuscation.html">Backups that don't read as backups</a></h3>
         <div class="cap-body">
           <p>Apply a reversible transformation to your seed and store the result instead. Whoever finds it holds a perfectly valid mnemonic — just not yours. Fund it with a small amount and it becomes a canary: if those coins ever move, your physical backup has been found. Be careful using complex setups, sometime simpler is better (e.g. use invisible ink)</p>
           <ul>
             <li>Circular bit shift, left or right</li>
             <li>NOT — negate the entropy bits</li>
             <li>ADD / SUB — shift every word by n positions</li>
+            <li>1 word XOR — XOR every word with a key word</li>
+            <li>How each one works, how to reverse it and its risks: <a href="obfuscation.html">obfuscation guide</a></li>
           </ul>
         </div>
       </article>
@@ -1178,6 +1180,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 <div class="guides rv">
+      <a class="guide" href="obfuscation.html">
+        <time datetime="2026-10-31">31 Oct 2026</time>
+        <h3>Obfuscation</h3>
+        <p>Backups that don't read as backups. Four reversible operations, how to undo them, and where they stop protecting you.</p>
+        <span class="more">Read the guide →</span>
+      </a>
       <a class="guide" href="blog.html#triple-mnemonic">
         <time datetime="2026-08-20">20 Aug 2026</time>
         <h3>Triple mnemonic</h3>
@@ -1296,6 +1304,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <a href="Binary_BIP39_wordlist.pdf" target="_blank" rel="noopener noreferrer"> BIP39 wordlist binary and decimal</a>
         <a href="FW_update.html" target="_blank" rel="noopener noreferrer">FW update procedure</a>
         <a href="security.html" target="_blank" rel="noopener noreferrer">Security considerations</a>
+        <a href="obfuscation.html">Obfuscation guide</a>
       </div>
       
 

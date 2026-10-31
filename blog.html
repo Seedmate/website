@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guides — Seedmate</title>
-<meta name="description" content="Self-custody guides from Seedmate: how to use seedXOR, Shamir over BIP39, Triple mnemonics, and a seven-point self-custody checklist.">
+<meta name="description" content="Self-custody guides from Seedmate: how to use seedXOR, Shamir over BIP39, Triple mnemonics, obfuscation, and a seven-point self-custody checklist.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
@@ -109,10 +109,18 @@ code{font-family:var(--mono);font-size:.8em;background:rgba(21,97,60,.1);color:v
   border-radius:2px;background:var(--green-hi);color:#04150D;text-decoration:none;border:1px solid var(--green-hi)}
 .btn:hover{box-shadow:4px 4px 0 rgba(255,255,255,.3)}
 
-footer{background:var(--ink);color:rgba(234,241,236,.45);padding:34px 0;
-  font-family:var(--mono);font-size:11px;letter-spacing:.08em}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-footer a{color:rgba(234,241,236,.7);text-decoration:none}
+/* footer (same as home) */
+footer{background:var(--ink);color:rgba(234,241,236,.62);padding:clamp(48px,6vw,72px) 0 34px;font-size:16px;
+  border-top:1px solid rgba(255,255,255,.08)}
+.foot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-bottom:40px}
+@media(max-width:760px){.foot-grid{grid-template-columns:1fr;gap:32px}}
+footer h4{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(234,241,236,.42);margin-bottom:16px;font-weight:400}
+footer a{color:rgba(234,241,236,.8);text-decoration:none;display:flex;align-items:center;gap:8px;padding:5px 0}
+footer a:hover{color:var(--green-hi)}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.12);padding-top:24px;
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:rgba(234,241,236,.4)}
 </style>
 </head>
 <body>
@@ -129,6 +137,7 @@ footer a{color:rgba(234,241,236,.7);text-decoration:none}
     </a>
     <nav class="main" id="nav">
       <a href="index.html#what">What it is</a>
+      <a href="index.html#why">Why</a>
       <a href="index.html#capabilities">Capabilities</a>
       <a href="index.html#schemes">Recovery schemes</a>
       <a href="index.html#specs">Specs</a>
@@ -154,6 +163,7 @@ footer a{color:rgba(234,241,236,.7);text-decoration:none}
 <!-- ==================== TABLE OF CONTENTS ==================== -->
 <div class="toc">
   <div class="toc-inner">
+    <a href="obfuscation.html"><time datetime="2026-10-31">31 Oct 2026</time><h3>Obfuscation</h3></a>
     <a href="#triple-mnemonic"><time datetime="2026-08-20">20 Aug 2026</time><h3>Triple mnemonic</h3></a>
     <a href="#shamir-bip39"><time datetime="2026-08-15">15 Aug 2026</time><h3>Shamir over BIP39</h3></a>
     <a href="#seedxor"><time datetime="2026-08-13">13 Aug 2026</time><h3>How to use seedXOR</h3></a>
@@ -351,6 +361,7 @@ A = B ⊕ C ⊕ <b>D</b></div>
     <h3>Fourth — obfuscation</h3>
     <p>Rather than storing a clear-text copy of your secret, apply a reversible transformation to it. Whoever finds that backup holds a valid mnemonic that isn't yours, unless they guess the exact reverse operation. Shifting every word by <code>n</code> positions is enough to produce a completely different, valid BIP39 seed.</p>
     <p>Load that obfuscated seed with a small amount and it becomes a canary: if the coins ever move, you know your physical backup has been found. The same trick works with the recovery schemes above, since every part is a valid BIP39 seed.</p>
+    <p>Obfuscation is not encryption, read the <a href="obfuscation.html">obfuscation guide</a> to understand each operation and its risks before using it.</p>
 
     <h3><a href="index.html#specs"> The hardware</a></h3>
     <p>Seedmate is a personal project engineered in Spain. Two boards: a custom processor board around a PIC32, paired with a commercial display and SD module. The software is fully open source, written from scratch in C plus a few libraries for SHA256, QR generation and Shamir arithmetic.</p>
@@ -389,7 +400,7 @@ A = B ⊕ C ⊕ <b>D</b></div>
           <li><b>Passphrase.</b> Combined with the mnemonic to derive different keys. An attacker needs both — but so do you. It's a 2-of-2: safer than single-sig, easier to lock yourself out.</li>
           <li><b>SeedXOR 2-of-3.</b> Generate <code>A</code> and <code>B</code>, derive <code>C</code>, and split the pairs across three locations. One location on its own tells an attacker nothing. Several hardware wallets support SeedXOR.</li>
           <li><b>Shamir k-of-n.</b> Any <code>k</code> shares rebuild the secret; fewer reveal nothing. Trezor's SLIP39 uses its own word list and few manufacturers adopted it. Seedmate implements Shamir over BIP39 instead: shares are BIP39 seeds of the same length, you write the share id and <code>k</code> alongside each one, and merging returns the original mnemonic. You'll need a Seedmate or the offline HTML tool to merge.</li>
-          <li><b>Obfuscation.</b> Transform <code>S</code> reversibly into another valid seed <code>X</code>. Whoever finds <code>X</code> gets nothing without the reverse operation, and decoy funds on <code>X</code> turn it into an early warning.</li>
+          <li><b><a href="obfuscation.html">Obfuscation</a>.</b> Transform <code>S</code> reversibly into another valid seed <code>X</code>. Whoever finds <code>X</code> gets nothing without the reverse operation, and decoy funds on <code>X</code> turn it into an early warning. It's a speed bump, not a wall: it can be brute-forced by someone who knows what to look for.</li>
           <li><b>Invisible ink, or simply hiding the copies well.</b> Sometimes simpler is better.</li>
           <li><b>Bitcoin multisig, multi-vendor.</b> Several keys from different manufacturers required to spend. Keep the descriptor file safe — losing it loses the funds. The final boss of self-custody.</li>
         </ul>
@@ -425,8 +436,45 @@ A = B ⊕ C ⊕ <b>D</b></div>
 
 <footer>
   <div class="wrap">
-    <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
-    <span><a href="index.html">SEEDMATE.NET</a></span>
+    <div class="foot-grid">
+      <div>
+        <h4>Product</h4>
+        <a href="index.html#buy">Buy — €49</a>
+        <a href="index.html#specs">Specs</a>
+        <a href="index.html#capabilities">Capabilities</a>
+        <a href="index.html#faq">FAQ</a>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <a href="https://github.com/Seedmate/Seedmate" target="_blank" rel="noopener noreferrer">Github repository</a>
+        <a href="https://seedmate.github.io/Seedmate_HTML_backup/" target="_blank" rel="noopener noreferrer">Offline HTML tool</a>
+        <a href="simulator.html">Interactive Simulator</a>
+        <a href="Printable BIP39 wordlist.pdf" target="_blank" rel="noopener noreferrer">Printable BIP39 wordlist</a>
+        <a href="Binary_BIP39_wordlist.pdf" target="_blank" rel="noopener noreferrer">BIP39 wordlist binary and decimal</a>
+        <a href="FW_update.html">FW update procedure</a>
+        <a href="security.html">Security considerations</a>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <a href="mailto:support@seedmate.net">✉ E-mail</a>
+        <a href="https://x.com/@SeedMate_BTC" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          Seedmate_BTC
+        </a>
+        <a href="https://www.youtube.com/@SeedMate" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.070 0 12 0 12s0 3.930.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.930 24 12 24 12s0-3.930-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+          Youtube channel
+        </a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 SEEDMATE · ENGINEERED IN SPAIN</span>
+      <span>NOT FINANCIAL ADVICE · TEST YOUR BACKUPS TWICE A YEAR</span>
+    </div>
   </div>
 </footer>
 
